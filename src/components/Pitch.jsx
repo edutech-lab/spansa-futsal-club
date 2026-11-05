@@ -1,10 +1,10 @@
 import { shortName } from '../utils.js';
 
 export const POLA = {
-  '1-2-1': [['Kiper', 150, 360], ['Anak', 150, 280], ['Flank Kiri', 62, 200], ['Flank Kanan', 238, 200], ['Pivot', 150, 100]],
-  '2-2': [['Kiper', 150, 360], ['Bek Kiri', 90, 280], ['Bek Kanan', 210, 280], ['Depan Kiri', 90, 130], ['Depan Kanan', 210, 130]],
-  '3-1': [['Kiper', 150, 360], ['Bek Kiri', 62, 272], ['Bek Tengah', 150, 292], ['Bek Kanan', 238, 272], ['Pivot', 150, 112]],
-  '1-1-2': [['Kiper', 150, 360], ['Anak', 150, 285], ['Tengah', 150, 205], ['Depan Kiri', 95, 108], ['Depan Kanan', 205, 108]]
+  '1-2-1': [['Kiper', 150, 346], ['Anak', 150, 280], ['Flank Kiri', 62, 200], ['Flank Kanan', 238, 200], ['Pivot', 150, 100]],
+  '2-2': [['Kiper', 150, 346], ['Bek Kiri', 90, 280], ['Bek Kanan', 210, 280], ['Depan Kiri', 90, 130], ['Depan Kanan', 210, 130]],
+  '3-1': [['Kiper', 150, 346], ['Bek Kiri', 62, 272], ['Bek Tengah', 150, 292], ['Bek Kanan', 238, 272], ['Pivot', 150, 112]],
+  '1-1-2': [['Kiper', 150, 346], ['Anak', 150, 285], ['Tengah', 150, 205], ['Depan Kiri', 95, 108], ['Depan Kanan', 205, 108]]
 };
 export const POLA_LIST = Object.keys(POLA);
 

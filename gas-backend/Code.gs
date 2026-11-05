@@ -1207,8 +1207,7 @@ function dashboard_(p, ctx) {
   const me = ctx.nisn;
   const mine = presTerm.filter(function (x) { return x.nisn === me; });
   const keh = { H: 0, S: 0, I: 0, A: 0 };
-  let iuran = 0;
-  mine.forEach(function (x) { if (keh[x.status] !== undefined) keh[x.status]++; iuran += Number(x.iuran) || 0; });
+  mine.forEach(function (x) { if (keh[x.status] !== undefined) keh[x.status]++; });
   const persen = ms.length ? round1_(keh.H / ms.length * 100) : 0;
   const sv = readTable_('Nilai').filter(function (n) { return n.nisn === me && n.tahunAjaran === p.term; })[0];
   const tren = [];
@@ -1225,7 +1224,7 @@ function dashboard_(p, ctx) {
   const act = presAll.filter(function (x) { return x.nisn === me && dateOf[x.pertemuanId]; }).map(function (x) { return { tipe: 'Presensi', teks: 'Latihan ' + dateOf[x.pertemuanId] + ': ' + LBL[x.status], waktu: dateOf[x.pertemuanId] + 'T00:00:00' }; });
   readTable_('Jadwal').forEach(function (j) { act.push({ tipe: 'Jadwal', teks: 'Jadwal vs ' + j.lawan + ' (' + j.tanggal + ')', waktu: j.createdAt }); });
   act.sort(function (a, b) { return a.waktu < b.waktu ? 1 : -1; });
-  base.stats = { persenHadir: persen, hadir: keh.H, totalPertemuan: ms.length, iuran: iuran, jadwalMendatang: up.length, nilai: sv ? { total: sv.total, predikat: sv.predikat } : null };
+  base.stats = { persenHadir: persen, hadir: keh.H, totalPertemuan: ms.length, jadwalMendatang: up.length, nilai: sv ? { total: sv.total, predikat: sv.predikat } : null };
   base.kehadiran = keh;
   base.tren = tren;
   base.aktivitas = act.slice(0, 6);

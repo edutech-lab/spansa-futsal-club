@@ -46,10 +46,9 @@ export default function Dashboard() {
           <Stat icon={PiggyBank} color="#6D4AE0" label="Saldo Kas" value={rupiah(s.saldo)} sub="Hingga akhir periode" ghost={Wallet} />
         </div>
       ) : (
-        <div className="grid g-stats">
+        <div className="grid g-stats three">
           <Stat icon={TrendingUp} color="#1E63F0" label="Kehadiran Saya" value={s.persenHadir + '%'} sub={`${s.hadir} dari ${s.totalPertemuan} latihan`} ghost={TrendingUp} />
           <Stat icon={CalendarDays} color="#10B981" label="Jadwal Mendatang" value={s.jadwalMendatang} sub="Pertandingan" ghost={CalendarDays} />
-          <Stat icon={Coins} color="#F59E0B" label="Total Iuran Saya" value={rupiah(s.iuran)} sub={term} ghost={Coins} />
           <Stat icon={Award} color="#6D4AE0" label="Nilai Semester" value={s.nilai ? s.nilai.predikat : '-'} sub={s.nilai ? `Total ${s.nilai.total}` : 'Belum diinput'} ghost={Award} />
         </div>
       )}
