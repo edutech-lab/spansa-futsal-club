@@ -44,6 +44,10 @@ const SETTINGS_DEFAULT = {
   namaKlub: 'Spansa Futsal Club',
   namaSekolah: 'SMP Negeri 1 Bandar Lampung',
   logoUrl: APP.DEFAULT_LOGO,
+  logoSekolahUrl: 'https://lh3.googleusercontent.com/d/1GDe6aqXyF_RR6kL3jMCy0vWqaO83jgyp',
+  webSekolah: 'smpn1-bandarlampung.sch.id',
+  youtube: 'spansa_official',
+  instagram: 'spansa_official',
   bannerUrl: '',
   iuranPerPertemuan: '5000',
   bobotHadir: '70',
@@ -89,7 +93,7 @@ const ROUTES = {
   savePresensi: { admin: true, write: true, fn: savePresensi_ },
   deletePertemuan: { admin: true, write: true, fn: deletePertemuan_ },
   rekapHadir: { fn: rekapHadir_ },
-  rekapIuran: { fn: rekapIuran_ },
+  rekapIuran: { admin: true, fn: rekapIuran_ },
   listNilai: { admin: true, fn: listNilai_ },
   saveNilai: { admin: true, write: true, fn: saveNilai_ },
   listJadwal: { admin: true, fn: listJadwal_ },
@@ -375,8 +379,11 @@ function saveSettings_(p, ctx) {
   ['namaKlub', 'namaSekolah'].forEach(function (k) {
     if (!merged[k] || merged[k].length > 80) throw new AppError('Nama klub/sekolah wajib diisi (maksimal 80 karakter)', 'VALID');
   });
-  ['logoUrl', 'bannerUrl'].forEach(function (k) {
+  ['logoUrl', 'logoSekolahUrl', 'bannerUrl'].forEach(function (k) {
     if (merged[k] && (!/^https:\/\/\S+$/.test(merged[k]) || merged[k].length > 500)) throw new AppError('URL ' + k + ' harus diawali https://', 'VALID');
+  });
+  ['webSekolah', 'youtube', 'instagram'].forEach(function (k) {
+    if (!/^[\w.\-@\/:]{1,80}$/.test(merged[k])) throw new AppError('Isian ' + k + ' tidak valid (tanpa spasi, maksimal 80 karakter)', 'VALID');
   });
   const num = function (k, min, max) {
     const v = merged[k];

@@ -50,10 +50,11 @@ export default function Formasi() {
                   {jl.data.map((j) => <option key={j.id} value={j.id}>{tglID(j.tanggal, true)} · vs {j.lawan}</option>)}
                 </select>
               </Field>
-              <Field label="Pola formasi">
-                <div className="row wrap">{POLA_LIST.map((p) => <button key={p} className={'btn sm ' + (pola === p ? '' : 'sec')} onClick={() => setPola(p)}>{p}</button>)}</div>
-              </Field>
-              {fm.loading ? <Loading /> : fm.error ? <ErrorBox message={fm.error} onRetry={fm.reload} /> : (
+              <div className="field">
+                <span>Pola formasi</span>
+                <div className="row wrap">{POLA_LIST.map((p) => <button key={p} type="button" className={'btn sm ' + (pola === p ? '' : 'sec')} onClick={() => setPola(p)}>{p}</button>)}</div>
+              </div>
+              {fm.loading || (!fm.data && !fm.error) ? <Loading /> : fm.error ? <ErrorBox message={fm.error} onRetry={fm.reload} /> : (
                 <>
                   <div className="form-grid">
                     {POLA[pola].map(([label], i) => (
@@ -65,14 +66,15 @@ export default function Formasi() {
                       </Field>
                     ))}
                   </div>
-                  <Field label="Pemain cadangan">
+                  <div className="field">
+                    <span>Pemain cadangan</span>
                     <div className="row wrap" style={{ gap: 6 }}>
                       {fm.data.anggota.filter((a) => !used.has(a.nisn)).map((a) => (
-                        <button key={a.nisn} className={'btn sm ' + (cad.includes(a.nisn) ? '' : 'sec')} onClick={() => toggleCad(a.nisn)}>{a.nama}</button>
+                        <button key={a.nisn} type="button" className={'btn sm ' + (cad.includes(a.nisn) ? '' : 'sec')} onClick={() => toggleCad(a.nisn)}>{a.nama}</button>
                       ))}
                       {fm.data.anggota.filter((a) => !used.has(a.nisn)).length === 0 && <span className="hint">Semua anggota sudah masuk susunan utama</span>}
                     </div>
-                  </Field>
+                  </div>
                 </>
               )}
             </div>

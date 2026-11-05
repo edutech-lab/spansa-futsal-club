@@ -4,7 +4,7 @@ import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { Card, Field, PageHead, useUi } from '../ui.jsx';
 
-const KEYS = ['namaKlub', 'namaSekolah', 'logoUrl', 'bannerUrl', 'iuranPerPertemuan', 'bobotHadir', 'bobotIndividu', 'batasA', 'batasB', 'batasC'];
+const KEYS = ['namaKlub', 'namaSekolah', 'logoUrl', 'logoSekolahUrl', 'webSekolah', 'youtube', 'instagram', 'bannerUrl', 'iuranPerPertemuan', 'bobotHadir', 'bobotIndividu', 'batasA', 'batasB', 'batasC'];
 
 export default function Pengaturan() {
   const { settings, setSettings } = useAuth();
@@ -36,7 +36,13 @@ export default function Pengaturan() {
           <div className="stack" style={{ gap: 12 }}>
             <Field label="Nama klub"><input className="input" value={f.namaKlub || ''} onChange={set('namaKlub')} /></Field>
             <Field label="Nama sekolah"><input className="input" value={f.namaSekolah || ''} onChange={set('namaSekolah')} /></Field>
-            <Field label="URL logo"><input className="input" value={f.logoUrl || ''} onChange={set('logoUrl')} placeholder="https://..." /></Field>
+            <Field label="URL logo klub"><input className="input" value={f.logoUrl || ''} onChange={set('logoUrl')} placeholder="https://..." /></Field>
+            <Field label="URL logo sekolah (kartu anggota)"><input className="input" value={f.logoSekolahUrl || ''} onChange={set('logoSekolahUrl')} placeholder="https://..." /></Field>
+            <Field label="Website sekolah"><input className="input" value={f.webSekolah || ''} onChange={set('webSekolah')} /></Field>
+            <div className="form-grid">
+              <Field label="YouTube"><input className="input" value={f.youtube || ''} onChange={set('youtube')} /></Field>
+              <Field label="Instagram"><input className="input" value={f.instagram || ''} onChange={set('instagram')} /></Field>
+            </div>
             <Field label="URL foto banner (opsional)" hint="Kosongkan untuk memakai banner vektor bawaan"><input className="input" value={f.bannerUrl || ''} onChange={set('bannerUrl')} placeholder="https://..." /></Field>
           </div>
         </Card>

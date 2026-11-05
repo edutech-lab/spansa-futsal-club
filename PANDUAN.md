@@ -1,6 +1,13 @@
 # Panduan Implementasi: Spansa Futsal Club
 SMP Negeri 1 Bandar Lampung · Frontend React + Vite (GitHub → Vercel) · Backend Google Apps Script · Database Google Sheets
 
+## 0. Catatan revisi terbaru
+- **Backend berubah:** setelah mengganti `Code.gs`, wajib **Deploy > Manage deployments > Edit > Version: New version > Deploy**. Tanpa langkah ini Web App tetap memakai kode lama. Tidak perlu menjalankan ulang `setupDatabase()`; pengaturan baru terisi otomatis dengan nilai bawaan.
+- **Frontend berubah:** commit dan push ke GitHub, Vercel membangun ulang otomatis.
+- Rekap Iuran kini **khusus admin** (menu dihapus untuk anggota, dan server menolak akses anggota).
+- Pengaturan baru (menu Pengaturan > Identitas & Tampilan): URL logo sekolah, website, YouTube, Instagram untuk kartu anggota.
+- Perbaikan Formasi: halaman kini menunggu data selesai dimuat; ditambah pengaman agar error satu halaman tidak membuat layar putih.
+
 ## 1. Struktur proyek
 ```
 spansa-futsal-club/

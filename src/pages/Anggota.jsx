@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Download, KeyRound, Pencil, Plus, Trash2, UserPlus } from 'lucide-react';
+import { Check, Download, KeyRound, Pencil, Plus, Search, Trash2, UserPlus } from 'lucide-react';
 import { api } from '../api.js';
 import { Avatar, Card, DataTable, ErrorBox, Field, Loading, Modal, PageHead, SearchBox, useLoad, useUi } from '../ui.jsx';
 import { exportXlsx, tglID } from '../utils.js';
@@ -64,21 +64,40 @@ function AddModal({ open, onClose, onDone }) {
   const cand = useMemo(() => (data || []).filter((s) => !s.isAnggota && (!q || (s.nama + ' ' + s.nisn + ' ' + s.kelas).toLowerCase().includes(q.toLowerCase()))).slice(0, 200), [data, q]);
   const nisns = Object.keys(sel).filter((k) => sel[k]);
   const close = () => { setSel({}); setQ(''); setTgl(''); onClose(); };
+  const toggle = (n) => setSel({ ...sel, [n]: !sel[n] });
+  const allShown = cand.length > 0 && cand.every((s) => sel[s.nisn]);
+  const toggleAll = () => { const next = { ...sel }; cand.forEach((s) => { next[s.nisn] = !allShown; }); setSel(next); };
   const submit = async () => {
     setBusy(true);
     try { await api('addAnggota', { nisns, tglBergabung: tgl }); toast(`${nisns.length} anggota ditambahkan`); onDone(); reload(); close(); } catch (e) { toast(e.message, 'err'); } finally { setBusy(false); }
   };
   return (
     <Modal open={open} onClose={close} wide title="Tambah Anggota dari Data Siswa" footer={<><button className="btn sec" onClick={close}>Batal</button><button className="btn" disabled={busy || !nisns.length} onClick={submit}><Plus size={16} />{busy ? 'Menyimpan...' : `Tambahkan ${nisns.length} siswa`}</button></>}>
-      <div className="toolbar"><SearchBox value={q} onChange={setQ} placeholder="Cari siswa" /><Field label="Tanggal bergabung (opsional)"><input className="input" type="date" value={tgl} onChange={(e) => setTgl(e.target.value)} /></Field></div>
+      <div className="pair">
+        <Field label="Cari siswa">
+          <div className="search full"><Search size={16} /><input className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Nama, NISN, atau kelas" /></div>
+        </Field>
+        <Field label="Tanggal bergabung (opsional)"><input className="input" type="date" value={tgl} onChange={(e) => setTgl(e.target.value)} /></Field>
+      </div>
+      <div className="row between wrap" style={{ margin: '14px 0 8px' }}>
+        <span className={'chip ' + (nisns.length ? '' : 'warn')}>{nisns.length} siswa dipilih</span>
+        <div className="row">
+          {nisns.length > 0 && <button type="button" className="btn ghost sm" onClick={() => setSel({})}>Kosongkan</button>}
+          <button type="button" className="btn sec sm" onClick={toggleAll} disabled={!cand.length}>{allShown ? 'Batal pilih semua' : 'Pilih semua hasil'}</button>
+        </div>
+      </div>
       {loading ? <Loading /> : cand.length === 0 ? <p className="mut c" style={{ padding: 20 }}>Tidak ada siswa yang dapat ditambahkan. Pastikan Data Siswa sudah diisi.</p> : (
-        <div className="tw" style={{ maxHeight: 360, border: '1px solid var(--bd)', borderRadius: 12 }}>
-          <table><thead><tr><th style={{ width: 40 }} /><th>Nama</th><th>NISN</th><th>Kelas</th></tr></thead>
-            <tbody>{cand.map((s) => <tr key={s.nisn} onClick={() => setSel({ ...sel, [s.nisn]: !sel[s.nisn] })} style={{ cursor: 'pointer' }}>
-              <td><input type="checkbox" checked={!!sel[s.nisn]} onChange={() => {}} aria-label={s.nama} /></td><td>{s.nama}</td><td>{s.nisn}</td><td>{s.kelas}</td></tr>)}</tbody></table>
+        <div className="pick-list" role="group" aria-label="Daftar siswa">
+          {cand.map((s) => (
+            <button key={s.nisn} type="button" role="checkbox" aria-checked={!!sel[s.nisn]} className={'pick' + (sel[s.nisn] ? ' on' : '')} onClick={() => toggle(s.nisn)}>
+              <Avatar name={s.nama} size={38} />
+              <span className="tx"><b>{s.nama}</b><small>{s.nisn} · Kelas {s.kelas} · {s.jk === 'L' ? 'Laki-laki' : 'Perempuan'}</small></span>
+              <span className="tick"><Check size={14} strokeWidth={3} /></span>
+            </button>
+          ))}
         </div>
       )}
-      <p className="hint" style={{ marginTop: 8 }}>Akun login anggota dibuat otomatis: username dan password awal adalah NISN.</p>
+      <p className="hint" style={{ marginTop: 10 }}>Akun login anggota dibuat otomatis: username dan password awal adalah NISN.</p>
     </Modal>
   );
 }

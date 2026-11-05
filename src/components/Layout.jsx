@@ -16,7 +16,7 @@ export const MENU = [
   { path: 'formasi', label: 'Formasi', icon: LayoutGrid, roles: ['admin'] },
   { path: 'nilai', label: 'Nilai', icon: Award, roles: ['admin'] },
   { path: 'rekap-hadir', label: 'Rekap Kehadiran', icon: ClipboardCheck, roles: ['admin', 'anggota'] },
-  { path: 'rekap-iuran', label: 'Rekap Iuran', icon: Coins, roles: ['admin', 'anggota'] },
+  { path: 'rekap-iuran', label: 'Rekap Iuran', icon: Coins, roles: ['admin'] },
   { path: 'pengeluaran', label: 'Pengeluaran Kas', icon: Receipt, roles: ['admin'] },
   { path: 'rekap-kas', label: 'Rekap Keuangan', icon: PiggyBank, roles: ['admin'] },
   { path: 'pengaturan', label: 'Pengaturan', icon: Settings, roles: ['admin'] }
@@ -84,7 +84,7 @@ export default function Layout({ route, children }) {
 
   const bottom = isAdmin
     ? [['dashboard', 'Home', Home], ['hadir', 'Hadir', ClipboardCheck], ['rekap-kas', 'Kas', Wallet], ['kartu', 'Kartu', CreditCard]]
-    : [['dashboard', 'Home', Home], ['rekap-hadir', 'Hadir', ClipboardCheck], ['rekap-iuran', 'Iuran', Coins], ['kartu', 'Kartu', CreditCard]];
+    : [['dashboard', 'Home', Home], ['rekap-hadir', 'Hadir', ClipboardCheck], ['kartu', 'Kartu', CreditCard]];
 
   return (
     <div className={(open ? 'open ' : '') + (collapsed ? 'collapsed' : '')}>

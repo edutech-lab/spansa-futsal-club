@@ -1,17 +1,26 @@
 import { useEffect, useRef, useState } from 'react';
-import { Download, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Globe, Instagram, Loader2, Youtube } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { DEFAULT_LOGO } from '../config.js';
 import { Card, ErrorBox, Loading, PageHead, useLoad, useUi } from '../ui.jsx';
-import { initials, tglID } from '../utils.js';
+import { initials, splitSchool, tglID } from '../utils.js';
 
-function Kartu({ d, logo, foto, innerRef }) {
+const SCHOOL_LOGO = 'https://lh3.googleusercontent.com/d/1GDe6aqXyF_RR6kL3jMCy0vWqaO83jgyp';
+
+function Kartu({ d, logo, logoSekolah, foto, innerRef }) {
+  const [l1, l2] = splitSchool(d.namaSekolah);
   return (
     <div className="kartu" ref={innerRef}>
-      <div className="k-strip" /><div className="k-strip2" />
-      <div className="k-top"><img src={logo} alt="" /><div><b>KARTU ANGGOTA</b><span>{d.namaKlub}</span></div></div>
+      <div className="k-deco"><i className="a" /><i className="b" /></div>
+      <div className="k-top">
+        <div className="k-club"><img src={logo} alt="" /><div><b>KARTU ANGGOTA</b><span>{d.namaKlub}</span></div></div>
+        <div className="k-school">
+          <div className="k-sn"><b>{l1}</b><span>{l2}</span></div>
+          <span className="k-sl"><img src={logoSekolah} alt="" /></span>
+        </div>
+      </div>
       <div className="k-photo">{foto ? <img src={foto} alt="" /> : initials(d.nama)}</div>
       <div className="k-info">
         <small>NAMA</small><div className="nm">{d.nama}</div>
@@ -19,7 +28,11 @@ function Kartu({ d, logo, foto, innerRef }) {
         <small>KELAS</small><b>{d.kelas} · {d.jk === 'L' ? 'Laki-laki' : 'Perempuan'}</b>
         <small>BERGABUNG</small><b>{d.tglBergabung ? tglID(d.tglBergabung) : '-'}</b>
       </div>
-      <div className="k-foot">{d.namaSekolah}</div>
+      <div className="k-foot">
+        <span><Globe size={14} color="#1D5FE8" />{d.web}</span>
+        <span><Youtube size={14} color="#FF0000" />{d.youtube}</span>
+        <span><Instagram size={14} color="#E1306C" />{d.instagram}</span>
+      </div>
     </div>
   );
 }
@@ -31,34 +44,38 @@ async function toData(url) {
   try { const r = await api('imageData', { url }); cache.set(url, r.dataUrl); return r.dataUrl; } catch { return ''; }
 }
 
-function CardView({ nisn }) {
+function CardView({ data }) {
   const { toast } = useUi();
   const { settings } = useAuth();
-  const { data, loading, error, reload } = useLoad(() => api('getKartu', { nisn }), [nisn]);
-  const [inl, setInl] = useState({ logo: '', foto: '' });
+  const logoUrl = settings.logoUrl || DEFAULT_LOGO;
+  const schoolUrl = settings.logoSekolahUrl || SCHOOL_LOGO;
+  const [inl, setInl] = useState({ logo: '', school: '', foto: '', ready: false });
   const [scale, setScale] = useState(1);
   const wrap = useRef(null);
   const shot = useRef(null);
   const [busy, setBusy] = useState(false);
-  const logoUrl = settings.logoUrl || DEFAULT_LOGO;
 
   useEffect(() => {
-    setInl({ logo: '', foto: '' });
-    if (!data) return;
     let ok = true;
-    Promise.all([toData(logoUrl), toData(data.fotoUrl)]).then(([logo, foto]) => { if (ok) setInl({ logo, foto }); });
+    setInl((p) => ({ ...p, ready: false }));
+    Promise.all([toData(logoUrl), toData(schoolUrl), toData(data.fotoUrl)]).then(([logo, school, foto]) => { if (ok) setInl({ logo, school, foto, ready: true }); });
     return () => { ok = false; };
-  }, [data, logoUrl]);
+  }, [logoUrl, schoolUrl, data.fotoUrl]);
   useEffect(() => {
     const fit = () => { if (wrap.current) setScale(Math.min(1, wrap.current.clientWidth / 540)); };
     fit();
     window.addEventListener('resize', fit);
     return () => window.removeEventListener('resize', fit);
-  }, [data]);
+  }, []);
 
-  if (loading) return <Loading />;
-  if (error) return <ErrorBox message={error} onRetry={reload} />;
-  const full = { ...data, namaKlub: settings.namaKlub || 'Spansa Futsal Club', namaSekolah: settings.namaSekolah || 'SMP Negeri 1 Bandar Lampung' };
+  const full = {
+    ...data,
+    namaKlub: settings.namaKlub || 'Spansa Futsal Club',
+    namaSekolah: settings.namaSekolah || 'SMP Negeri 1 Bandar Lampung',
+    web: settings.webSekolah || 'smpn1-bandarlampung.sch.id',
+    youtube: settings.youtube || 'spansa_official',
+    instagram: settings.instagram || 'spansa_official'
+  };
 
   const download = async () => {
     setBusy(true);
@@ -77,38 +94,56 @@ function CardView({ nisn }) {
     <>
       <div ref={wrap} className="kartu-wrap" style={{ height: 340 * scale }}>
         <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: 540 }}>
-          <Kartu d={full} logo={logoUrl} foto={data.fotoUrl} />
+          <Kartu d={full} logo={logoUrl} logoSekolah={schoolUrl} foto={data.fotoUrl} />
         </div>
       </div>
       <div style={{ position: 'fixed', left: -10000, top: 0 }} aria-hidden="true">
-        <Kartu d={full} logo={inl.logo || logoUrl} foto={inl.foto || data.fotoUrl} innerRef={shot} />
+        <Kartu d={full} logo={inl.logo || logoUrl} logoSekolah={inl.school || schoolUrl} foto={inl.foto || data.fotoUrl} innerRef={shot} />
       </div>
-      <div className="row" style={{ marginTop: 14 }}>
-        <button className="btn gold" onClick={download} disabled={busy}>{busy ? <Loader2 size={16} className="spin" /> : <Download size={16} />}Unduh Kartu (PNG)</button>
+      <div className="row wrap" style={{ marginTop: 14 }}>
+        <button className="btn gold" onClick={download} disabled={busy || !inl.ready}>{busy || !inl.ready ? <Loader2 size={16} className="spin" /> : <Download size={16} />}{inl.ready ? 'Unduh Kartu (PNG)' : 'Menyiapkan gambar...'}</button>
         <span className="hint">Foto kartu mengikuti foto profil.</span>
       </div>
     </>
   );
 }
 
+function MyCard({ nisn }) {
+  const { data, loading, error, reload } = useLoad(() => api('getKartu', { nisn }), [nisn]);
+  if (loading) return <Loading />;
+  if (error) return <ErrorBox message={error} onRetry={reload} />;
+  return <CardView data={data} />;
+}
+
 export default function KartuPage() {
   const { isAdmin, user } = useAuth();
-  const { data: list } = useLoad(() => (isAdmin ? api('listAnggota') : Promise.resolve([])), [isAdmin]);
+  const list = useLoad(() => (isAdmin ? api('listAnggota') : Promise.resolve([])), [isAdmin]);
   const [sel, setSel] = useState('');
-  useEffect(() => { if (isAdmin && list && list.length && !sel) setSel(list[0].nisn); }, [list, isAdmin, sel]);
-  const nisn = isAdmin ? sel : user.nisn;
+  const members = list.data || [];
+  // anggota pertama langsung terpilih tanpa menunggu efek; kartu tampil dari data daftar (tanpa permintaan tambahan)
+  const idx = Math.max(0, members.findIndex((m) => m.nisn === sel));
+  const current = members[idx] || null;
+  const go = (d) => { const n = members[(idx + d + members.length) % members.length]; if (n) setSel(n.nisn); };
+
   return (
     <>
       <PageHead title="Kartu Anggota" subtitle="Kartu digital anggota futsal" />
       <Card plain>
-        {isAdmin && (
-          <div className="toolbar">
-            <select className="input" style={{ maxWidth: 360 }} value={sel} onChange={(e) => setSel(e.target.value)} aria-label="Pilih anggota">
-              {(list || []).map((a) => <option key={a.nisn} value={a.nisn}>{a.nama} ({a.kelas})</option>)}
-            </select>
-          </div>
-        )}
-        {nisn ? <CardView key={nisn} nisn={nisn} /> : <p className="mut c" style={{ padding: 24 }}>Belum ada anggota futsal.</p>}
+        {isAdmin ? (
+          list.loading ? <Loading text="Memuat daftar anggota..." /> : list.error ? <ErrorBox message={list.error} onRetry={list.reload} /> : !current ? <p className="mut c" style={{ padding: 24 }}>Belum ada anggota futsal.</p> : (
+            <>
+              <div className="toolbar">
+                <button className="btn sec icon" onClick={() => go(-1)} aria-label="Anggota sebelumnya" disabled={members.length < 2}><ChevronLeft size={18} /></button>
+                <select className="input" style={{ maxWidth: 360 }} value={current.nisn} onChange={(e) => setSel(e.target.value)} aria-label="Pilih anggota">
+                  {members.map((a) => <option key={a.nisn} value={a.nisn}>{a.nama} ({a.kelas})</option>)}
+                </select>
+                <button className="btn sec icon" onClick={() => go(1)} aria-label="Anggota berikutnya" disabled={members.length < 2}><ChevronRight size={18} /></button>
+                <span className="hint">{idx + 1} dari {members.length}</span>
+              </div>
+              <CardView key={current.nisn} data={current} />
+            </>
+          )
+        ) : <MyCard nisn={user.nisn} />}
       </Card>
     </>
   );

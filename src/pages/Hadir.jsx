@@ -51,7 +51,6 @@ export default function Hadir() {
       <PageHead title="Daftar Hadir" subtitle={`Iuran kas otomatis ${rupiah(nominal)} per anggota yang hadir`}>
         <button className="btn sec" onClick={exp} disabled={!rows.length}><Download size={16} />Ekspor</button>
         {exists && <button className="btn sec" onClick={del}><Trash2 size={16} color="#EF4444" />Hapus</button>}
-        <button className="btn" onClick={save} disabled={busy || cur.loading}><Save size={16} />{busy ? 'Menyimpan...' : 'Simpan Presensi'}</button>
       </PageHead>
       <div className="grid" style={{ gridTemplateColumns: 'minmax(0,1fr) 280px', alignItems: 'start' }}>
         <Card plain>
@@ -79,7 +78,10 @@ export default function Hadir() {
                     </tr>
                   ))}
                 </tbody>
-                <tfoot><tr><td colSpan={5} className="r">Total iuran hari ini</td><td className="r">{rupiah(totalIuran)}</td></tr></tfoot>
+                <tfoot><tr>
+                  <td colSpan={3}><button className="btn" onClick={save} disabled={busy || cur.loading}><Save size={16} />{busy ? 'Menyimpan...' : 'Simpan Presensi'}</button></td>
+                  <td colSpan={2} className="r">Total iuran hari ini</td><td className="r">{rupiah(totalIuran)}</td>
+                </tr></tfoot>
               </table>
             </div>
           )}

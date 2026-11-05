@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Component, useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from './auth.jsx';
 import { UiProvider, Loading } from './ui.jsx';
 import Layout, { MENU } from './components/Layout.jsx';
@@ -22,6 +22,25 @@ const PAGES = {
   nilai: Nilai, 'rekap-hadir': RekapHadir, 'rekap-iuran': RekapIuran, pengeluaran: Pengeluaran, 'rekap-kas': RekapKas, pengaturan: Pengaturan
 };
 
+class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { err: null }; }
+  static getDerivedStateFromError(err) { return { err }; }
+  componentDidCatch(err) { console.error(err); }
+  render() {
+    if (!this.state.err) return this.props.children;
+    return (
+      <div className="card" style={{ padding: 28, textAlign: 'center' }}>
+        <h2 style={{ color: 'var(--navy)', marginBottom: 6 }}>Halaman gagal ditampilkan</h2>
+        <p className="mut" style={{ marginBottom: 14 }}>{String(this.state.err && this.state.err.message ? this.state.err.message : this.state.err)}</p>
+        <div className="row" style={{ justifyContent: 'center' }}>
+          <button className="btn" onClick={() => window.location.reload()}>Muat ulang</button>
+          <a className="btn sec" href="#/dashboard" onClick={() => this.setState({ err: null })}>Ke Dashboard</a>
+        </div>
+      </div>
+    );
+  }
+}
+
 function useRoute() {
   const read = () => (window.location.hash.replace(/^#\/?/, '').split('?')[0] || 'dashboard');
   const [r, setR] = useState(read);
@@ -41,7 +60,7 @@ function Shell() {
   const allowed = MENU.find((m) => m.path === route && m.roles.includes(user.role));
   const key = allowed ? route : 'dashboard';
   const Page = PAGES[key];
-  return <Layout route={key}><Page key={key} /></Layout>;
+  return <Layout route={key}><ErrorBoundary key={key}><Page /></ErrorBoundary></Layout>;
 }
 
 export default function App() {

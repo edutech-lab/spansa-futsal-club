@@ -77,6 +77,12 @@ export function timeAgo(str) {
   if (s < 86400 * 30) return `${Math.floor(s / 86400)} hari yang lalu`;
   return tglID(str.slice(0, 10), true);
 }
+/* "SMP Negeri 1 Bandar Lampung" -> ["SMP NEGERI 1", "Bandar Lampung"] */
+export function splitSchool(name) {
+  const n = String(name || '').trim();
+  const m = /^(.*?\d+)\s+(.+)$/.exec(n);
+  return m ? [m[1].toUpperCase(), m[2]] : [n.toUpperCase(), ''];
+}
 export const STATUS_LABEL = { H: 'Hadir', S: 'Sakit', I: 'Izin', A: 'Alpa' };
 
 /* ---------- Gambar ---------- */
