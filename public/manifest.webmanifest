@@ -1,0 +1,15 @@
+{
+  "name": "Spansa Futsal Club",
+  "short_name": "Spansa Futsal",
+  "description": "Manajemen keuangan, presensi, dan pertandingan Spansa Futsal Club SMP Negeri 1 Bandar Lampung",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0A2A94",
+  "theme_color": "#0A2A94",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

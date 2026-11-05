@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0B3FC9"/><stop offset="1" stop-color="#0A2A94"/></linearGradient></defs>
+  <rect width="512" height="512" fill="url(#g)"/>
+  <path d="M256 70l150 54v118c0 96-64 160-150 200-86-40-150-104-150-200V124z" fill="#FFC20E"/>
+  <path d="M256 92l130 47v103c0 84-55 140-130 176-75-36-130-92-130-176V139z" fill="#0A2A94"/>
+  <circle cx="256" cy="230" r="62" fill="#fff"/>
+  <path d="M256 190l30 22-11 36h-38l-11-36z" fill="#0A2A94"/>
+  <text x="256" y="372" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="56" fill="#FFC20E" text-anchor="middle">SFC</text>
+</svg>

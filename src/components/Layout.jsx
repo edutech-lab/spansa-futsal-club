@@ -1,0 +1,153 @@
+import { useEffect, useRef, useState } from 'react';
+import { Award, Bell, CalendarDays, Camera, ChevronDown, ClipboardCheck, Coins, CreditCard, GraduationCap, Home, KeyRound, LayoutGrid, LogOut, Menu, PiggyBank, Receipt, Settings, Users, Wallet } from 'lucide-react';
+import { api } from '../api.js';
+import { useAuth } from '../auth.jsx';
+import { DEFAULT_LOGO } from '../config.js';
+import { Avatar, Field, Modal, useUi } from '../ui.jsx';
+import { fileToResizedBase64, hariTgl, termOptions } from '../utils.js';
+
+export const MENU = [
+  { path: 'dashboard', label: 'Dashboard', icon: Home, roles: ['admin', 'anggota'] },
+  { path: 'siswa', label: 'Data Siswa', icon: GraduationCap, roles: ['admin'] },
+  { path: 'anggota', label: 'Anggota Futsal', icon: Users, roles: ['admin'] },
+  { path: 'kartu', label: 'Kartu Anggota', icon: CreditCard, roles: ['admin', 'anggota'] },
+  { path: 'hadir', label: 'Daftar Hadir', icon: ClipboardCheck, roles: ['admin'] },
+  { path: 'jadwal', label: 'Jadwal Pertandingan', icon: CalendarDays, roles: ['admin'] },
+  { path: 'formasi', label: 'Formasi', icon: LayoutGrid, roles: ['admin'] },
+  { path: 'nilai', label: 'Nilai', icon: Award, roles: ['admin'] },
+  { path: 'rekap-hadir', label: 'Rekap Kehadiran', icon: ClipboardCheck, roles: ['admin', 'anggota'] },
+  { path: 'rekap-iuran', label: 'Rekap Iuran', icon: Coins, roles: ['admin', 'anggota'] },
+  { path: 'pengeluaran', label: 'Pengeluaran Kas', icon: Receipt, roles: ['admin'] },
+  { path: 'rekap-kas', label: 'Rekap Keuangan', icon: PiggyBank, roles: ['admin'] },
+  { path: 'pengaturan', label: 'Pengaturan', icon: Settings, roles: ['admin'] }
+];
+
+function PasswordModal({ open, onClose }) {
+  const { toast } = useUi();
+  const [f, setF] = useState({ oldPassword: '', newPassword: '', confirm: '' });
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { if (open) setF({ oldPassword: '', newPassword: '', confirm: '' }); }, [open]);
+  const save = async () => {
+    if (f.newPassword.length < 6) return toast('Password baru minimal 6 karakter', 'err');
+    if (f.newPassword !== f.confirm) return toast('Konfirmasi password tidak sama', 'err');
+    setBusy(true);
+    try {
+      await api('changePassword', { oldPassword: f.oldPassword, newPassword: f.newPassword });
+      toast('Password berhasil diganti');
+      onClose();
+    } catch (e) { toast(e.message, 'err'); } finally { setBusy(false); }
+  };
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  return (
+    <Modal open={open} onClose={onClose} title="Ganti Password" footer={<><button className="btn sec" onClick={onClose}>Batal</button><button className="btn" disabled={busy} onClick={save}>{busy ? 'Menyimpan...' : 'Simpan'}</button></>}>
+      <div className="stack" style={{ gap: 12 }}>
+        <Field label="Password saat ini"><input className="input" type="password" autoComplete="current-password" value={f.oldPassword} onChange={set('oldPassword')} /></Field>
+        <Field label="Password baru" hint="Minimal 6 karakter"><input className="input" type="password" autoComplete="new-password" value={f.newPassword} onChange={set('newPassword')} /></Field>
+        <Field label="Ulangi password baru"><input className="input" type="password" autoComplete="new-password" value={f.confirm} onChange={set('confirm')} /></Field>
+      </div>
+    </Modal>
+  );
+}
+
+export default function Layout({ route, children }) {
+  const { user, setUser, settings, term, setTerm, logout, isAdmin } = useAuth();
+  const { toast } = useUi();
+  const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [pop, setPop] = useState('');
+  const [pw, setPw] = useState(false);
+  const [up, setUp] = useState([]);
+  const fileRef = useRef(null);
+  const menu = MENU.filter((m) => m.roles.includes(user.role));
+  const cur = MENU.find((m) => m.path === route);
+
+  useEffect(() => { setOpen(false); setPop(''); window.scrollTo(0, 0); }, [route]);
+  useEffect(() => { api('upcoming').then(setUp).catch(() => setUp([])); }, [route === 'jadwal']);
+  useEffect(() => {
+    const close = (e) => { if (!e.target.closest('[data-pop]')) setPop(''); };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, []);
+
+  const onPhoto = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      toast('Mengunggah foto...');
+      const img = await fileToResizedBase64(file);
+      const d = await api('updatePhoto', img);
+      setUser({ ...user, fotoUrl: d.fotoUrl });
+      toast('Foto profil diperbarui');
+    } catch (err) { toast(err.message, 'err'); }
+  };
+
+  const bottom = isAdmin
+    ? [['dashboard', 'Home', Home], ['hadir', 'Hadir', ClipboardCheck], ['rekap-kas', 'Kas', Wallet], ['kartu', 'Kartu', CreditCard]]
+    : [['dashboard', 'Home', Home], ['rekap-hadir', 'Hadir', ClipboardCheck], ['rekap-iuran', 'Iuran', Coins], ['kartu', 'Kartu', CreditCard]];
+
+  return (
+    <div className={(open ? 'open ' : '') + (collapsed ? 'collapsed' : '')}>
+      <aside className="sidebar">
+        <div className="sb-brand">
+          <img src={settings.logoUrl || DEFAULT_LOGO} alt="Logo" referrerPolicy="no-referrer" />
+          <b>{settings.namaKlub || 'Spansa Futsal Club'}</b>
+        </div>
+        <nav className="sb-nav">
+          {menu.map((m) => (
+            <a key={m.path} href={'#/' + m.path} className={route === m.path ? 'on' : ''}><m.icon size={20} />{m.label}</a>
+          ))}
+        </nav>
+        <div className="sb-foot">
+          <svg className="sb-court" viewBox="0 0 240 90" aria-hidden="true"><g stroke="#fff" strokeWidth="2" fill="none"><circle cx="120" cy="90" r="48" /><path d="M0 60 H240" /><rect x="70" y="30" width="100" height="60" /></g></svg>
+          <div style={{ position: 'relative' }}>Play Together,<br />Achieve More</div>
+          <svg width="150" height="14" viewBox="0 0 150 14" aria-hidden="true"><path d="M0 12 L146 2 L120 12 Z" fill="#FFC20E" /></svg>
+        </div>
+      </aside>
+      <div className="overlay" onClick={() => setOpen(false)} />
+      <div className="main">
+        <header className="header">
+          <button className="iconbtn" aria-label="Menu" onClick={() => (window.innerWidth <= 1024 ? setOpen(!open) : setCollapsed(!collapsed))}><Menu size={24} /></button>
+          <div className="h-title grow">{cur ? cur.label : 'Spansa Futsal Club'}</div>
+          <select className="term-sel" value={term} onChange={(e) => setTerm(e.target.value)} aria-label="Tahun ajaran">
+            {termOptions().map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+          <div style={{ position: 'relative' }} data-pop>
+            <button className="iconbtn" aria-label="Pengingat pertandingan" onClick={() => setPop(pop === 'bell' ? '' : 'bell')}>
+              <Bell size={22} />{up.length > 0 && <span className="badge-n">{up.length}</span>}
+            </button>
+            {pop === 'bell' && (
+              <div className="pop" style={{ minWidth: 270 }}>
+                <div className="b" style={{ padding: '6px 12px', color: 'var(--navy)' }}>Pertandingan 14 hari ke depan</div>
+                {up.length === 0 && <div className="mut" style={{ padding: '8px 12px' }}>Tidak ada jadwal terdekat</div>}
+                {up.map((j) => { const t = hariTgl(j.tanggal); return (
+                  <a key={j.id} href="#/dashboard" style={{ borderRadius: 10 }}><span className="chip">{t.hari} {t.tgl} {t.bln}</span><span>vs {j.lawan}<br /><small className="mut">{j.jam} WIB · {j.lokasi}</small></span></a>
+                ); })}
+              </div>
+            )}
+          </div>
+          <div style={{ position: 'relative' }} data-pop>
+            <button className="profile" onClick={() => setPop(pop === 'me' ? '' : 'me')}>
+              <Avatar src={user.fotoUrl} name={user.nama} size={38} /><span className="pn">{isAdmin ? 'Admin' : user.nama.split(' ')[0]}</span><ChevronDown size={16} />
+            </button>
+            {pop === 'me' && (
+              <div className="pop">
+                <div style={{ padding: '8px 12px' }}><div className="b" style={{ color: 'var(--navy)' }}>{user.nama}</div><div className="hint">{isAdmin ? 'Administrator' : `NISN ${user.nisn}`}</div></div>
+                <button onClick={() => { setPop(''); fileRef.current.click(); }}><Camera size={18} />Ganti foto profil</button>
+                <button onClick={() => { setPop(''); setPw(true); }}><KeyRound size={18} />Ganti password</button>
+                <button onClick={logout} style={{ color: '#B91C1C' }}><LogOut size={18} />Keluar</button>
+              </div>
+            )}
+          </div>
+          <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPhoto} />
+        </header>
+        <main className="content">{children}</main>
+      </div>
+      <nav className="bottom-nav">
+        {bottom.map(([p, l, I]) => <a key={p} href={'#/' + p} className={route === p ? 'on' : ''}><I size={21} />{l}</a>)}
+        <button onClick={() => setOpen(true)}><Menu size={21} />Menu</button>
+      </nav>
+      <PasswordModal open={pw} onClose={() => setPw(false)} />
+    </div>
+  );
+}
