@@ -49,6 +49,7 @@ const SETTINGS_DEFAULT = {
   youtube: 'spansa_official',
   instagram: 'spansa_official',
   bannerUrl: '',
+  saldoAwalKas: '0',
   iuranPerPertemuan: '5000',
   bobotHadir: '70',
   bobotIndividu: '30',
@@ -389,6 +390,7 @@ function saveSettings_(p, ctx) {
     const v = merged[k];
     if (!/^\d{1,7}$/.test(String(v)) || Number(v) < min || Number(v) > max) throw new AppError('Nilai ' + k + ' harus berupa angka ' + min + '-' + max, 'VALID');
   };
+  if (!/^\d{1,10}$/.test(String(merged.saldoAwalKas)) || Number(merged.saldoAwalKas) > 9999999999) throw new AppError('Saldo awal kas harus berupa angka bulat (rupiah)', 'VALID');
   num('iuranPerPertemuan', 0, 1000000);
   num('bobotHadir', 0, 100); num('bobotIndividu', 0, 100);
   num('batasA', 0, 100); num('batasB', 0, 100); num('batasC', 0, 100);
@@ -1142,7 +1144,7 @@ function sumBefore_(arr, from) { let s = 0; arr.forEach(function (x) { if (x.tan
 
 function kasOf_(term, fin) {
   const tr = termRange_(term);
-  const saldoAwal = sumBefore_(fin.incomes, tr.from) - sumBefore_(fin.spends, tr.from);
+  const saldoAwal = (Number(getSettings_().saldoAwalKas) || 0) + sumBefore_(fin.incomes, tr.from) - sumBefore_(fin.spends, tr.from);
   let saldo = saldoAwal, tm = 0, tk = 0;
   const rows = tr.months.map(function (b) {
     let masuk = 0, keluar = 0;

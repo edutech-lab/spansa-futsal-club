@@ -6,6 +6,9 @@ SMP Negeri 1 Bandar Lampung · Frontend React + Vite (GitHub → Vercel) · Back
 - **Frontend berubah:** commit dan push ke GitHub, Vercel membangun ulang otomatis.
 - Rekap Iuran kini **khusus admin**: menu dan kartu "Total Iuran Saya" di dashboard dihapus untuk anggota, dan server tidak lagi mengirim data iuran ke anggota.
 - Pengaturan baru (menu Pengaturan > Identitas & Tampilan): URL logo sekolah, website, YouTube, Instagram untuk kartu anggota.
+- **Saldo awal kas** (Pengaturan, paling atas): saldo kas sebelum iuran pertama dicatat. Isi sekali di awal. Nilainya ditambahkan ke saldo awal semua semester pada Rekap Keuangan dan Dashboard, bukan dihitung sebagai pemasukan iuran. Mengubahnya di kemudian hari menggeser seluruh saldo.
+- Form Pengeluaran Kas: jumlah (qty) di samping nominal, total otomatis di bawahnya dengan ukuran lebih besar.
+- Kartu anggota: jenis kelamin dihilangkan, kop dibatasi garis emas dan pemisah vertikal antara klub dan sekolah, footer putih diberi motif abstrak.
 - Perbaikan Formasi: halaman kini menunggu data selesai dimuat; ditambah pengaman agar error satu halaman tidak membuat layar putih.
 
 ## 1. Struktur proyek

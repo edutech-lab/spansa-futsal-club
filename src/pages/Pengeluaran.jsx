@@ -70,11 +70,13 @@ export default function Pengeluaran() {
       <Modal open={!!form} onClose={() => setForm(null)} title={form && form.id ? 'Ubah Pengeluaran' : 'Tambah Pengeluaran'} footer={<><button className="btn sec" onClick={() => setForm(null)}>Batal</button><button className="btn" disabled={busy} onClick={save}>{busy ? 'Menyimpan...' : 'Simpan'}</button></>}>
         {form && (
           <div className="form-grid">
-            <Field label="Tanggal"><input className="input" type="date" min={range.from} max={range.to} value={form.tanggal} onChange={set('tanggal')} /></Field>
-            <Field label="Jumlah (qty)"><input className="input" inputMode="numeric" value={form.jumlah} onChange={intOnly('jumlah')} /></Field>
+            <Field label="Tanggal" className="full"><input className="input" type="date" min={range.from} max={range.to} value={form.tanggal} onChange={set('tanggal')} /></Field>
             <Field label="Keterangan pengeluaran" className="full"><input className="input" value={form.keterangan} onChange={set('keterangan')} placeholder="Contoh: Beli bola futsal" /></Field>
-            <Field label="Nominal satuan (Rp)"><input className="input" inputMode="numeric" value={form.nominal} onChange={intOnly('nominal')} /></Field>
-            <Field label="Total"><input className="input" value={rupiah(totalForm)} readOnly /></Field>
+            <div className="full pair2">
+              <Field label="Nominal satuan (Rp)"><input className="input" inputMode="numeric" value={form.nominal} onChange={intOnly('nominal')} placeholder="0" /></Field>
+              <Field label="Jumlah (qty)"><input className="input" inputMode="numeric" value={form.jumlah} onChange={intOnly('jumlah')} /></Field>
+            </div>
+            <div className="full total-box"><span>Total</span><b>{rupiah(totalForm)}</b></div>
             <div className="full">
               <button className="btn sec" onClick={() => fileRef.current.click()}><Paperclip size={16} />{bukti ? 'Ganti bukti' : 'Unggah bukti (opsional)'}</button>
               <input ref={fileRef} type="file" hidden accept="image/jpeg,image/png,image/webp,application/pdf" onChange={pick} />

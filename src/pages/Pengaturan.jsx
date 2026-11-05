@@ -3,8 +3,9 @@ import { Save } from 'lucide-react';
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { Card, Field, PageHead, useUi } from '../ui.jsx';
+import { rupiah } from '../utils.js';
 
-const KEYS = ['namaKlub', 'namaSekolah', 'logoUrl', 'logoSekolahUrl', 'webSekolah', 'youtube', 'instagram', 'bannerUrl', 'iuranPerPertemuan', 'bobotHadir', 'bobotIndividu', 'batasA', 'batasB', 'batasC'];
+const KEYS = ['saldoAwalKas', 'namaKlub', 'namaSekolah', 'logoUrl', 'logoSekolahUrl', 'webSekolah', 'youtube', 'instagram', 'bannerUrl', 'iuranPerPertemuan', 'bobotHadir', 'bobotIndividu', 'batasA', 'batasB', 'batasC'];
 
 export default function Pengaturan() {
   const { settings, setSettings } = useAuth();
@@ -24,6 +25,7 @@ export default function Pengaturan() {
       <div className="grid g-2e">
         <Card title="Iuran & Penilaian" plain>
           <div className="form-grid">
+            <Field label="Saldo awal kas (Rp)" hint={`Saldo kas sebelum iuran pertama dicatat: ${rupiah(Number(f.saldoAwalKas) || 0)}. Isi sekali di awal, sebelum input iuran kas.`} className="full"><input className="input" inputMode="numeric" value={f.saldoAwalKas || ''} onChange={num('saldoAwalKas')} placeholder="0" /></Field>
             <Field label="Iuran kas per pertemuan (Rp)" hint="Hanya berlaku untuk pertemuan baru; data lama tidak berubah" className="full"><input className="input" inputMode="numeric" value={f.iuranPerPertemuan || ''} onChange={num('iuranPerPertemuan')} /></Field>
             <Field label="Bobot kehadiran (%)"><input className="input" inputMode="numeric" value={f.bobotHadir || ''} onChange={num('bobotHadir')} /></Field>
             <Field label="Bobot kemampuan individu (%)"><input className="input" inputMode="numeric" value={f.bobotIndividu || ''} onChange={num('bobotIndividu')} /></Field>
