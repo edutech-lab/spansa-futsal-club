@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Award, Banknote, Bell, CalendarDays, Camera, ChevronDown, ClipboardCheck, Coins, CreditCard, GraduationCap, Home, Images, KeyRound, LayoutGrid, LogOut, Menu, Moon, PiggyBank, Receipt, Settings, Sun, Users, Wallet } from 'lucide-react';
+import { Bell, CalendarCheck, Camera, ChevronDown, ClipboardCheck, Coins, CreditCard, GraduationCap, HandCoins, Home, Images, KeyRound, LayoutDashboard, LogOut, Medal, Menu, Moon, Receipt, Settings, Shirt, Sun, Wallet } from 'lucide-react';
+import { Ball, Pitch } from './icons.jsx';
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { DEFAULT_LOGO, REQUIRED_API } from '../config.js';
@@ -8,20 +9,20 @@ import { getTheme, saveTheme } from '../theme.js';
 import { fileToResizedBase64, hariTgl, termOptions } from '../utils.js';
 
 export const MENU = [
-  { path: 'dashboard', label: 'Dashboard', icon: Home, roles: ['admin', 'anggota'], grp: 'Utama' },
+  { path: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'anggota'], grp: 'Utama' },
   { path: 'siswa', label: 'Data Siswa', icon: GraduationCap, roles: ['admin'], grp: 'Keanggotaan' },
-  { path: 'anggota', label: 'Anggota Futsal', icon: Users, roles: ['admin'], grp: 'Keanggotaan' },
+  { path: 'anggota', label: 'Anggota Futsal', icon: Shirt, roles: ['admin'], grp: 'Keanggotaan' },
   { path: 'kartu', label: 'Kartu Anggota', icon: CreditCard, roles: ['admin', 'anggota'], grp: 'Keanggotaan' },
   { path: 'galeri', label: 'Galeri', icon: Images, roles: ['admin', 'anggota'], grp: 'Keanggotaan' },
   { path: 'hadir', label: 'Daftar Hadir', icon: ClipboardCheck, roles: ['admin'], grp: 'Latihan & Pertandingan' },
-  { path: 'jadwal', label: 'Jadwal Pertandingan', icon: CalendarDays, roles: ['admin'], grp: 'Latihan & Pertandingan' },
-  { path: 'formasi', label: 'Formasi', icon: LayoutGrid, roles: ['admin'], grp: 'Latihan & Pertandingan' },
-  { path: 'nilai', label: 'Nilai', icon: Award, roles: ['admin'], grp: 'Latihan & Pertandingan' },
-  { path: 'rekap-hadir', label: 'Rekap Kehadiran', icon: ClipboardCheck, roles: ['admin', 'anggota'], grp: 'Latihan & Pertandingan' },
+  { path: 'jadwal', label: 'Jadwal Pertandingan', icon: Ball, roles: ['admin'], grp: 'Latihan & Pertandingan' },
+  { path: 'formasi', label: 'Formasi', icon: Pitch, roles: ['admin'], grp: 'Latihan & Pertandingan' },
+  { path: 'nilai', label: 'Nilai', icon: Medal, roles: ['admin'], grp: 'Latihan & Pertandingan' },
+  { path: 'rekap-hadir', label: 'Rekap Kehadiran', icon: CalendarCheck, roles: ['admin', 'anggota'], grp: 'Latihan & Pertandingan' },
   { path: 'rekap-iuran', label: 'Rekap Iuran', icon: Coins, roles: ['admin'], grp: 'Keuangan' },
-  { path: 'pemasukan', label: 'Pemasukan Kas', icon: Banknote, roles: ['admin'], grp: 'Keuangan' },
+  { path: 'pemasukan', label: 'Pemasukan Kas', icon: HandCoins, roles: ['admin'], grp: 'Keuangan' },
   { path: 'pengeluaran', label: 'Pengeluaran Kas', icon: Receipt, roles: ['admin'], grp: 'Keuangan' },
-  { path: 'rekap-kas', label: 'Rekap Keuangan', icon: PiggyBank, roles: ['admin'], grp: 'Keuangan' },
+  { path: 'rekap-kas', label: 'Rekap Keuangan', icon: Wallet, roles: ['admin'], grp: 'Keuangan' },
   { path: 'pengaturan', label: 'Pengaturan', icon: Settings, roles: ['admin'], grp: 'Sistem' }
 ];
 

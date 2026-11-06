@@ -628,3 +628,6 @@ tfoot td{background:#F5F8FD}
 .btn.sec:disabled,.btn.ghost:disabled{filter:none;background:#EEF2F9;color:#3B4558}
 [data-theme="dark"] .btn.sec:disabled,[data-theme="dark"] .btn.ghost:disabled{background:var(--ctl);color:var(--tx)}
 @media (prefers-reduced-motion:reduce){.ring{animation-duration:2.2s}.ld-bar:after{animation-duration:2.6s}}
+
+/* Logo klub di sidebar: lencana putih agar warna logo serasi dengan tema biru */
+.sb-brand img{width:44px;height:44px;padding:5px;box-sizing:border-box;border-radius:50%;background:#fff;box-shadow:0 4px 12px rgba(6,24,80,.28)}
