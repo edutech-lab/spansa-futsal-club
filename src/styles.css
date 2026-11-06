@@ -455,10 +455,9 @@ tfoot td{background:#F5F8FD}
 
 /* Grup menu sidebar */
 .sb-grp{padding:16px 0 6px 18px;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,.6)}
-.sb-sep{height:1px;margin:14px 34px 0 22px;background:rgba(255,255,255,.28)}
 .sb-nav{overflow-y:auto;scrollbar-width:none}.sb-nav::-webkit-scrollbar{display:none}
 .sb-foot{display:none}
-@media (max-width:1024px){.sb-grp{padding-left:10px}.sb-sep{margin:12px 10px 0}}
+@media (max-width:1024px){.sb-grp{padding-left:10px}}
 
 /* Kartu Anggota: tema biru-putih profesional */
 .kartu{background:linear-gradient(135deg,#1E5ACC 0%,#266FF2 62%,#4F8DF7 100%);font-family:'Inter','Plus Jakarta Sans',sans-serif}
@@ -499,3 +498,49 @@ tfoot td{background:#F5F8FD}
 .nota-lines{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
 .nota-stamp{border-color:rgba(46,158,122,.55);color:rgba(46,158,122,.62)}
 .nota-note{background:linear-gradient(100deg,#1E5ACC,#266FF2)}
+
+/* Sidebar: bisa digulir, scrollbar disembunyikan */
+.sb-brand{flex:none}
+.sb-nav{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
+.sb-nav::-webkit-scrollbar{display:none;width:0;height:0}
+
+/* Logo sekolah di Kartu Anggota tanpa latar putih */
+.k-sl{background:transparent;box-shadow:none;padding:0;width:58px;height:58px;border-radius:0}
+
+/* ===== Tema gelap ===== */
+:root[data-theme="dark"]{color-scheme:dark;--blue:#4F8DF7;--blue-d:#6FA3FF;--blue-m:#3F7BE8;--navy:#E8EEFB;--bg:#0E1526;--card:#17213A;--bd:#26324D;--tx:#C9D3E6;--mut:#8C99B3;--soft:rgba(79,141,247,.16);--sh:none;--ok:#3DBE95;--ctl:#1B2744;--ctl-h:#223157}
+[data-theme="dark"] body{background:#0A1020;color:var(--tx)}
+[data-theme="dark"] .main,[data-theme="dark"] .header,[data-theme="dark"] .bottom-nav{background:#121B30}
+[data-theme="dark"] .header{border-bottom-color:var(--bd)}
+[data-theme="dark"] .sb-nav a.on{background:#121B30;color:var(--blue)}
+[data-theme="dark"] .sb-nav a.on:before{background:radial-gradient(circle at 0 0,transparent 17.5px,#121B30 18px)}
+[data-theme="dark"] .sb-nav a.on:after{background:radial-gradient(circle at 0 100%,transparent 17.5px,#121B30 18px)}
+[data-theme="dark"] .card,[data-theme="dark"] .modal,[data-theme="dark"] .toast,[data-theme="dark"] .pop,[data-theme="dark"] .login-card,[data-theme="dark"] .up-item,[data-theme="dark"] .bukti-box{background:var(--card);border-color:var(--bd)}
+[data-theme="dark"] .input,[data-theme="dark"] .term-sel,[data-theme="dark"] .iconbtn,[data-theme="dark"] .profile,[data-theme="dark"] .btn.sec,[data-theme="dark"] .pill,[data-theme="dark"] .seg button,[data-theme="dark"] .pick,[data-theme="dark"] .li .ico,[data-theme="dark"] .tabs button.on{background:var(--ctl);border-color:#2C3A5A}
+[data-theme="dark"] .iconbtn:hover,[data-theme="dark"] .pop button:hover,[data-theme="dark"] .btn.sec:hover,[data-theme="dark"] .profile:hover,[data-theme="dark"] .pill:hover,[data-theme="dark"] .pick:hover{background:var(--ctl-h)}
+[data-theme="dark"] .pop button:hover{background:var(--ctl)}
+[data-theme="dark"] .pick.on{background:#1F3160;border-color:var(--blue)}
+[data-theme="dark"] .pill.on,[data-theme="dark"] .seg2 button.on{background:var(--blue);color:#fff}
+[data-theme="dark"] th,[data-theme="dark"] tfoot td,[data-theme="dark"] .li,[data-theme="dark"] .arow,[data-theme="dark"] .seg2,[data-theme="dark"] .tabs,[data-theme="dark"] .lockrow .input:disabled{background:var(--ctl)}
+[data-theme="dark"] .li,[data-theme="dark"] .arow{border-color:var(--bd)}
+[data-theme="dark"] td{border-top-color:var(--bd)}
+[data-theme="dark"] tbody tr:hover{background:#1A2542}
+[data-theme="dark"] .bukti-drop,[data-theme="dark"] .total-box{background:var(--ctl);border-color:#34476E;color:var(--navy)}
+[data-theme="dark"] .viewer,[data-theme="dark"] .gal-card,[data-theme="dark"] .bukti-thumb{background:var(--ctl);border-color:var(--bd)}
+[data-theme="dark"] .av{background:rgba(79,141,247,.18);color:var(--blue)}
+[data-theme="dark"] .chip{background:var(--soft);color:var(--blue)}
+[data-theme="dark"] .chip.ok{background:rgba(46,158,122,.18);color:#5AD1A8}
+[data-theme="dark"] .chip.warn{background:rgba(245,165,36,.18);color:#F5B94D}
+[data-theme="dark"] .chip.err{background:rgba(229,72,77,.18);color:#FF8A8E}
+[data-theme="dark"] .chip.vio{background:rgba(109,74,224,.22);color:#B7A3FF}
+[data-theme="dark"] .skel{background:linear-gradient(90deg,#1B2744 25%,#223157 37%,#1B2744 63%);background-size:400% 100%}
+[data-theme="dark"] .warnbar{background:rgba(245,165,36,.14);border-color:rgba(245,165,36,.4);color:#F5C76B}
+[data-theme="dark"] .input{color:var(--navy)}
+[data-theme="dark"] .input::placeholder{color:#6B7898}
+[data-theme="dark"] .bignum small{color:#5C6A88}
+[data-theme="dark"] select option{background:#17213A;color:#E8EEFB}
+[data-theme="dark"] .recharts-default-tooltip{background:#17213A!important;border:1px solid #26324D!important}
+[data-theme="dark"] .recharts-tooltip-label,[data-theme="dark"] .recharts-tooltip-item{color:#E8EEFB!important}
+[data-theme="dark"] .nota,[data-theme="dark"] .kartu{--navy:#0B1220;--tx:#3B4558;--mut:#6B7686;--bd:#EBEDF2;--blue:#266FF2;--blue-d:#1E5ACC;--soft:#EEF4FF}
+@media (max-width:1024px){[data-theme="dark"] .sidebar{background:#10224D}}
+@media print{[data-theme="dark"] body{background:#fff}}

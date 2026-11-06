@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Award, Banknote, Bell, CalendarDays, Camera, ChevronDown, ClipboardCheck, Coins, CreditCard, GraduationCap, Home, Images, KeyRound, LayoutGrid, LogOut, Menu, PiggyBank, Receipt, Settings, Users, Wallet } from 'lucide-react';
+import { Award, Banknote, Bell, CalendarDays, Camera, ChevronDown, ClipboardCheck, Coins, CreditCard, GraduationCap, Home, Images, KeyRound, LayoutGrid, LogOut, Menu, Moon, PiggyBank, Receipt, Settings, Sun, Users, Wallet } from 'lucide-react';
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { DEFAULT_LOGO, REQUIRED_API } from '../config.js';
 import { Avatar, Field, Modal, useUi } from '../ui.jsx';
+import { getTheme, saveTheme } from '../theme.js';
 import { fileToResizedBase64, hariTgl, termOptions } from '../utils.js';
 
 export const MENU = [
@@ -58,6 +59,8 @@ export default function Layout({ route, children }) {
   const [collapsed, setCollapsed] = useState(false);
   const [pop, setPop] = useState('');
   const [pw, setPw] = useState(false);
+  const [theme, setTheme] = useState(getTheme);
+  const toggleTheme = () => { const t = theme === 'dark' ? 'light' : 'dark'; saveTheme(t); setTheme(t); };
   const [shut, setShut] = useState(() => { try { return JSON.parse(localStorage.getItem('sb-shut') || '{}'); } catch { return {}; } });
   const [up, setUp] = useState([]);
   const fileRef = useRef(null);
@@ -102,7 +105,6 @@ export default function Layout({ route, children }) {
         <nav className="sb-nav">
           {groups.map((g, gi) => (
             <div key={g.name} className="sb-g">
-              {gi > 0 && <div className="sb-sep" />}
               {gi > 0 && <button type="button" className={'sb-grp' + (shut[g.name] ? ' shut' : '')} aria-expanded={!shut[g.name]} onClick={() => toggleGrp(g.name)}>{g.name}<ChevronDown size={14} /></button>}
               {(gi === 0 || !shut[g.name]) && g.items.map((m) => (
                 <a key={m.path} href={'#/' + m.path} className={route === m.path ? 'on' : ''}><m.icon size={20} />{m.label}</a>
@@ -119,6 +121,7 @@ export default function Layout({ route, children }) {
           <select className="term-sel" value={term} onChange={(e) => setTerm(e.target.value)} aria-label="Tahun ajaran">
             {termOptions().map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
+          <button className="iconbtn" aria-label={theme === 'dark' ? 'Ganti ke tema terang' : 'Ganti ke tema gelap'} title={theme === 'dark' ? 'Tema terang' : 'Tema gelap'} onClick={toggleTheme}>{theme === 'dark' ? <Sun size={21} /> : <Moon size={21} />}</button>
           <div style={{ position: 'relative' }} data-pop>
             <button className="iconbtn" aria-label="Pengingat pertandingan" onClick={() => setPop(pop === 'bell' ? '' : 'bell')}>
               <Bell size={22} />{up.length > 0 && <span className="badge-n">{up.length}</span>}

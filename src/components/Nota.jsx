@@ -11,7 +11,7 @@ import { toData } from './imageData.js';
 function Lines() {
   return (
     <svg className="nota-lines" width="100%" height="100%" aria-hidden="true">
-      {Array.from({ length: 14 }, (_, i) => <line key={i} x1="0" x2="100%" y1={6 + i * 7} y2={6 + i * 7} stroke="#266FF2" strokeOpacity=".16" strokeWidth="1" />)}
+      {Array.from({ length: 40 }, (_, i) => <line key={i} x1="0" x2="100%" y1={2 + i * 2.5} y2={2 + i * 2.5} stroke="#266FF2" strokeOpacity=".2" strokeWidth=".5" />)}
     </svg>
   );
 }
