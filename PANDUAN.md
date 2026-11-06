@@ -56,7 +56,7 @@ Sheet database: `Users`, `Sessions`, `Settings`, `Siswa`, `Anggota`, `Pertemuan`
 5. **Daftar Hadir** tiap latihan, **Jadwal**, **Formasi**, **Nilai** per semester, **Pengeluaran Kas**.
 6. Instal sebagai aplikasi: di HP buka URL, menu browser > *Add to Home screen*.
 
-Aturan periode: Ganjil = Juli-Desember, Genap = Januari-Juni. Semua daftar, rekap, dan grafik hanya menampilkan data pada semester terpilih. Saldo kas tetap terbawa (saldo awal semester = akumulasi sebelumnya).
+Pilihan tahun ajaran dimulai dari 2026/2027 (Ganjil dan Genap); tahun berikutnya muncul otomatis saat tahun ajaran baru dimulai (ubah `FIRST_TERM_YEAR` di `src/utils.js` bila perlu). Aturan periode: Ganjil = Juli-Desember, Genap = Januari-Juni. Semua daftar, rekap, dan grafik hanya menampilkan data pada semester terpilih. Saldo kas tetap terbawa (saldo awal semester = akumulasi sebelumnya).
 
 ## 5. Memperbarui aplikasi
 - **Frontend**: ubah file, commit dan push ke GitHub; Vercel build ulang otomatis.

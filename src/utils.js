@@ -33,13 +33,15 @@ export function currentTerm(d = new Date()) {
   const m = d.getMonth() + 1;
   return m >= 7 ? `${y}/${y + 1} Ganjil` : `${y - 1}/${y} Genap`;
 }
+// Data aplikasi mulai dibuat pada tahun ajaran 2026/2027, sehingga tahun sebelumnya tidak ditampilkan.
+export const FIRST_TERM_YEAR = 2026;
 export function termOptions() {
   const cur = currentTerm();
-  const y0 = Number(cur.slice(0, 4));
+  const lastYear = Math.max(FIRST_TERM_YEAR, Number(cur.slice(0, 4)));
   const out = [];
-  for (let y = y0; y >= y0 - 3; y--) {
-    out.push(`${y}/${y + 1} Genap`);
+  for (let y = FIRST_TERM_YEAR; y <= lastYear; y++) {
     out.push(`${y}/${y + 1} Ganjil`);
+    out.push(`${y}/${y + 1} Genap`);
   }
   return out;
 }

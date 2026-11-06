@@ -61,7 +61,6 @@ export default function Layout({ route, children }) {
   const [pw, setPw] = useState(false);
   const [theme, setTheme] = useState(getTheme);
   const toggleTheme = () => { const t = theme === 'dark' ? 'light' : 'dark'; saveTheme(t); setTheme(t); };
-  const [shut, setShut] = useState(() => { try { return JSON.parse(localStorage.getItem('sb-shut') || '{}'); } catch { return {}; } });
   const [up, setUp] = useState([]);
   const fileRef = useRef(null);
   const menu = MENU.filter((m) => m.roles.includes(user.role));
@@ -69,8 +68,6 @@ export default function Layout({ route, children }) {
   const cur = MENU.find((m) => m.path === route);
 
   useEffect(() => { setOpen(false); setPop(''); window.scrollTo(0, 0); }, [route]);
-  const toggleGrp = (name) => setShut((cur0) => { const n = { ...cur0, [name]: !cur0[name] }; try { localStorage.setItem('sb-shut', JSON.stringify(n)); } catch { /* abaikan */ } return n; });
-  useEffect(() => { if (cur && cur.grp) setShut((x) => (x[cur.grp] ? { ...x, [cur.grp]: false } : x)); }, [route]);
   useEffect(() => { api('upcoming').then(setUp).catch(() => setUp([])); }, [route === 'jadwal']);
   useEffect(() => {
     const close = (e) => { if (!e.target.closest('[data-pop]')) setPop(''); };
@@ -83,7 +80,7 @@ export default function Layout({ route, children }) {
     e.target.value = '';
     if (!file) return;
     try {
-      toast('Mengunggah foto...');
+      toast('Mengunggah foto...', 'load');
       const img = await fileToResizedBase64(file);
       const d = await api('updatePhoto', img);
       setUser({ ...user, fotoUrl: d.fotoUrl });
@@ -103,11 +100,10 @@ export default function Layout({ route, children }) {
           <b>{settings.namaKlub || 'Spansa Futsal Club'}</b>
         </div>
         <nav className="sb-nav">
-          {groups.map((g, gi) => (
+          {groups.map((g) => (
             <div key={g.name} className="sb-g">
-              {gi > 0 && <button type="button" className={'sb-grp' + (shut[g.name] ? ' shut' : '')} aria-expanded={!shut[g.name]} onClick={() => toggleGrp(g.name)}>{g.name}<ChevronDown size={14} /></button>}
-              {(gi === 0 || !shut[g.name]) && g.items.map((m) => (
-                <a key={m.path} href={'#/' + m.path} className={route === m.path ? 'on' : ''}><m.icon size={20} />{m.label}</a>
+              {g.items.map((m) => (
+                <a key={m.path} href={'#/' + m.path} className={route === m.path ? 'on' : ''} aria-current={route === m.path ? 'page' : undefined}><m.icon size={20} />{m.label}</a>
               ))}
             </div>
           ))}

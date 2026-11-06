@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Inbox, Loader2, Search, X } from 'lucide-react';
+import { DEFAULT_LOGO } from './config.js';
 import { initials, monthLabel, termRange } from './utils.js';
 
 const UiCtx = createContext(null);
@@ -20,8 +21,8 @@ export function UiProvider({ children }) {
       {children}
       <div className="toasts" aria-live="polite">
         {toasts.map((t) => (
-          <div key={t.id} className={'toast ' + (t.type === 'err' ? 'err' : '')}>
-            {t.type === 'err' ? <AlertCircle size={18} color="#EF4444" /> : <CheckCircle2 size={18} color="#10B981" />}
+          <div key={t.id} className={'toast ' + (t.type === 'err' ? 'err' : t.type === 'load' ? 'load' : '')}>
+            {t.type === 'err' ? <AlertCircle size={18} color="#EF4444" /> : t.type === 'load' ? <Loader2 size={18} className="spin" color="#266FF2" /> : <CheckCircle2 size={18} color="#10B981" />}
             <span>{t.message}</span>
           </div>
         ))}
@@ -113,7 +114,29 @@ export function Avatar({ src, name, size = 36 }) {
 }
 
 export function Loading({ text = 'Memuat data...' }) {
-  return <div className="loading"><Loader2 className="spin" size={26} color="#1D5FE8" /><span>{text}</span></div>;
+  return (
+    <div className="loading" role="status" aria-live="polite">
+      <span className="ring" aria-hidden="true" />
+      <span className="ld-text">{text}</span>
+      <span className="ld-bar" aria-hidden="true" />
+    </div>
+  );
+}
+
+export function Splash({ text = 'Memuat aplikasi...' }) {
+  return (
+    <div className="splash" role="status" aria-live="polite">
+      <div className="splash-in">
+        <div className="splash-logo">
+          <span className="ring light" aria-hidden="true" />
+          <img src={DEFAULT_LOGO} alt="" referrerPolicy="no-referrer" />
+        </div>
+        <b>Spansa Futsal Club</b>
+        <span className="splash-text">{text}</span>
+        <span className="ld-bar light" aria-hidden="true" />
+      </div>
+    </div>
+  );
 }
 export function Empty({ text = 'Belum ada data' }) {
   return <div className="empty"><Inbox size={30} /><span>{text}</span></div>;

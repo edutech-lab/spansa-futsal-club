@@ -11,7 +11,8 @@ function initialTerm() {
     const t = localStorage.getItem(TERM_KEY);
     if (t && termOptions().includes(t)) return t;
   } catch { /* abaikan */ }
-  return currentTerm();
+  const cur = currentTerm();
+  return termOptions().includes(cur) ? cur : termOptions()[0];
 }
 
 export function AuthProvider({ children }) {

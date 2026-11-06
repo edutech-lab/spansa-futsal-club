@@ -1,6 +1,6 @@
 import { Component, useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from './auth.jsx';
-import { UiProvider, Loading } from './ui.jsx';
+import { UiProvider, Splash } from './ui.jsx';
 import Layout, { MENU } from './components/Layout.jsx';
 import Login from './pages/Login.jsx';
 import Dashboard from './pages/Dashboard.jsx';
@@ -57,7 +57,7 @@ function useRoute() {
 function Shell() {
   const { user, booting } = useAuth();
   const route = useRoute();
-  if (booting) return <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}><Loading text="Memuat aplikasi..." /></div>;
+  if (booting) return <Splash text="Memuat aplikasi..." />;
   if (!user) return <Login />;
   const allowed = MENU.find((m) => m.path === route && m.roles.includes(user.role));
   const key = allowed ? route : 'dashboard';
