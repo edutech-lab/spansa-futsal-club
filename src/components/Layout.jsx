@@ -58,6 +58,7 @@ export default function Layout({ route, children }) {
   const [collapsed, setCollapsed] = useState(false);
   const [pop, setPop] = useState('');
   const [pw, setPw] = useState(false);
+  const [shut, setShut] = useState(() => { try { return JSON.parse(localStorage.getItem('sb-shut') || '{}'); } catch { return {}; } });
   const [up, setUp] = useState([]);
   const fileRef = useRef(null);
   const menu = MENU.filter((m) => m.roles.includes(user.role));
@@ -65,6 +66,8 @@ export default function Layout({ route, children }) {
   const cur = MENU.find((m) => m.path === route);
 
   useEffect(() => { setOpen(false); setPop(''); window.scrollTo(0, 0); }, [route]);
+  const toggleGrp = (name) => setShut((cur0) => { const n = { ...cur0, [name]: !cur0[name] }; try { localStorage.setItem('sb-shut', JSON.stringify(n)); } catch { /* abaikan */ } return n; });
+  useEffect(() => { if (cur && cur.grp) setShut((x) => (x[cur.grp] ? { ...x, [cur.grp]: false } : x)); }, [route]);
   useEffect(() => { api('upcoming').then(setUp).catch(() => setUp([])); }, [route === 'jadwal']);
   useEffect(() => {
     const close = (e) => { if (!e.target.closest('[data-pop]')) setPop(''); };
@@ -100,8 +103,8 @@ export default function Layout({ route, children }) {
           {groups.map((g, gi) => (
             <div key={g.name} className="sb-g">
               {gi > 0 && <div className="sb-sep" />}
-              {gi > 0 && <div className="sb-grp">{g.name}</div>}
-              {g.items.map((m) => (
+              {gi > 0 && <button type="button" className={'sb-grp' + (shut[g.name] ? ' shut' : '')} aria-expanded={!shut[g.name]} onClick={() => toggleGrp(g.name)}>{g.name}<ChevronDown size={14} /></button>}
+              {(gi === 0 || !shut[g.name]) && g.items.map((m) => (
                 <a key={m.path} href={'#/' + m.path} className={route === m.path ? 'on' : ''}><m.icon size={20} />{m.label}</a>
               ))}
             </div>

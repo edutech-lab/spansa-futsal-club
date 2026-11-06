@@ -319,13 +319,13 @@ tfoot td{background:#F8FAFF;font-weight:800;color:var(--navy)}
 @media print{.sidebar,.header,.bottom-nav,.toolbar,.btn{display:none!important}.main{margin:0}}
 
 /* ===== Tema "Medlio" (bingkai biru, sidebar tab putih, kartu rapi) =====
-   Dimuat SETELAH styles.css. Nota cetak tetap memakai palet lama; Kartu Anggota memakai palet tema. */
+   Dimuat SETELAH styles.css. Kartu Anggota dan Nota memakai palet tema. */
 :root{
   --blue:#266FF2;--blue-d:#1E5ACC;--blue-m:#1F67ED;--navy:#0B1220;
   --bg:#F7F7F7;--bd:#EBEDF2;--tx:#3B4558;--mut:#8B95A7;--soft:#EEF4FF;
   --r:16px;--sh:0 1px 2px rgba(16,24,40,.03);--ok:#2E9E7A;
 }
-.nota{--navy:#0B1F6B;--blue:#1D5FE8;--blue-d:#0A2A94;--mut:#64748B;--bd:#E3EAF8}
+.nota{--mut:#6B7686}
 body{font-family:'Inter','Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--blue);color:var(--tx)}
 
 /* Sidebar menempel di bingkai biru */
@@ -476,3 +476,26 @@ tfoot td{background:#F5F8FD}
 .k-foot{background:#fff;border-top:0;color:#0B1220;font-weight:600}
 .sb-g{display:flex;flex-direction:column;gap:6px}
 .sb-nav{gap:0!important}
+
+/* Grup menu: tombol lipat */
+.sb-grp{display:flex;align-items:center;justify-content:space-between;width:100%;border:0;background:none;cursor:pointer;font-family:inherit;text-align:left;padding:16px 22px 6px 18px}
+.sb-grp:hover{color:#fff}
+.sb-grp svg{transition:transform .15s}
+.sb-grp.shut svg{transform:rotate(-90deg)}
+
+/* Nota pelatih: tema biru-putih */
+.nota{border:2px solid #1E5ACC;box-shadow:inset 0 0 0 5px #fff,inset 0 0 0 6px #D5E3FD;font-family:'Inter','Plus Jakarta Sans',sans-serif}
+.nota-bg{position:absolute;left:50%;top:122px;width:300px;height:300px;transform:translateX(-50%);object-fit:contain;opacity:.07;pointer-events:none}
+.nota-head{background:linear-gradient(100deg,#1E5ACC,#266FF2 70%,#4F8DF7);border-bottom:4px solid #BBD3FB}
+.nh-t b{font-weight:700;letter-spacing:1.2px}
+.nh-r b{color:#fff;font-weight:800}
+.nota-no b,.nrow b{color:#0B1220}
+.nrow.terb{position:relative;overflow:hidden;background:#F5F8FF;border:1px solid #D5E3FD}
+.nrow.terb>span,.nrow.terb>i{position:relative}
+.nrow.terb i{color:#1E5ACC}
+.nota-amt{position:relative;overflow:hidden;border:2px solid #266FF2;background:#F5F8FF}
+.nota-amt>small,.nota-amt>b{position:relative}
+.nota-amt b{color:#1E5ACC;font-weight:700}
+.nota-lines{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+.nota-stamp{border-color:rgba(46,158,122,.55);color:rgba(46,158,122,.62)}
+.nota-note{background:linear-gradient(100deg,#1E5ACC,#266FF2)}

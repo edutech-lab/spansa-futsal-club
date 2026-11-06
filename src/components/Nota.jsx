@@ -8,13 +8,19 @@ import { Modal, useUi } from '../ui.jsx';
 import { rupiah, splitSchool, terbilang, tglID } from '../utils.js';
 import { toData } from './imageData.js';
 
+function Lines() {
+  return (
+    <svg className="nota-lines" width="100%" height="100%" aria-hidden="true">
+      {Array.from({ length: 14 }, (_, i) => <line key={i} x1="0" x2="100%" y1={6 + i * 7} y2={6 + i * 7} stroke="#266FF2" strokeOpacity=".16" strokeWidth="1" />)}
+    </svg>
+  );
+}
+
 export function NotaSheet({ d, logo, innerRef }) {
   const kota = splitSchool(d.namaSekolah)[1] || 'Bandar Lampung';
   return (
     <div className="nota" ref={innerRef}>
-      <svg className="nota-bg" viewBox="0 0 800 340" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-        <g stroke="#0A2A94" strokeWidth="3" fill="none"><circle cx="400" cy="170" r="120" /><path d="M400 20 V320" /><circle cx="400" cy="170" r="8" fill="#0A2A94" /></g>
-      </svg>
+      <img className="nota-bg" src={logo} alt="" />
       <div className="nota-head">
         <img src={logo} alt="" />
         <div className="nh-t"><b>{String(d.namaKlub).toUpperCase()}</b><span>{d.namaSekolah}</span></div>
@@ -25,10 +31,10 @@ export function NotaSheet({ d, logo, innerRef }) {
         <div className="nrow"><span>Dibayarkan kepada</span><b>: {d.penerima}</b></div>
         <div className="nrow"><span>Untuk pembayaran</span><b>: {d.keterangan}</b></div>
         <div className="nrow"><span>Rincian</span><b>: {d.jumlah} x {rupiah(d.nominal)}</b></div>
-        <div className="nrow terb"><span>Terbilang</span><i>{terbilang(d.total)}</i></div>
+        <div className="nrow terb"><Lines /><span>Terbilang</span><i>{terbilang(d.total)}</i></div>
       </div>
       <div className="nota-foot">
-        <div className="nota-amt"><small>JUMLAH</small><b>{rupiah(d.total)}</b></div>
+        <div className="nota-amt"><Lines /><small>JUMLAH</small><b>{rupiah(d.total)}</b></div>
         <div className="nota-sign">
           <div className="sg-city">{kota}, {tglID(d.tanggal)}</div>
           <div className="sg-cols">
@@ -39,7 +45,7 @@ export function NotaSheet({ d, logo, innerRef }) {
         </div>
       </div>
       <div className="nota-stamp">LUNAS</div>
-      <div className="nota-note">Kuitansi ini sah sebagai bukti pembayaran · {d.web}</div>
+      <div className="nota-note">Kuitansi ini sah sebagai bukti pembayaran</div>
     </div>
   );
 }
@@ -75,8 +81,7 @@ export function NotaModal({ open, onClose, item }) {
     namaKlub: settings.namaKlub || 'Spansa Futsal Club',
     namaSekolah: settings.namaSekolah || 'SMP Negeri 1 Bandar Lampung',
     namaBendahara: settings.namaBendahara || '',
-    namaPembina: settings.namaPembina || '',
-    web: settings.webSekolah || 'smpn1-bandarlampung.sch.id'
+    namaPembina: settings.namaPembina || ''
   };
   const download = async () => {
     setBusy(true);
@@ -100,8 +105,8 @@ export function NotaModal({ open, onClose, item }) {
     <>
       <Modal open onClose={onClose} wide title={`Nota Pelatih · ${d.noNota}`} footer={<>
         <button className="btn sec" onClick={print}><Printer size={16} />Cetak</button>
-        <button className="btn gold" onClick={download} disabled={busy}>{busy ? <Loader2 size={16} className="spin" /> : <Download size={16} />}Unduh PNG</button>
-        <button className="btn" onClick={onClose}>Tutup</button></>}>
+        <button className="btn" onClick={download} disabled={busy}>{busy ? <Loader2 size={16} className="spin" /> : <Download size={16} />}Unduh PNG</button>
+        <button className="btn sec" onClick={onClose}>Tutup</button></>}>
         <div ref={wrap} className="kartu-wrap" style={{ height: 480 * scale }}>
           <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: 800 }}>
             <NotaSheet d={d} logo={logoUrl} />
