@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Award, Bell, CalendarDays, Camera, ChevronDown, ClipboardCheck, Coins, CreditCard, GraduationCap, Home, KeyRound, LayoutGrid, LogOut, Menu, PiggyBank, Receipt, Settings, Users, Wallet } from 'lucide-react';
+import { Award, Banknote, Bell, CalendarDays, Camera, ChevronDown, ClipboardCheck, Coins, CreditCard, GraduationCap, Home, Images, KeyRound, LayoutGrid, LogOut, Menu, PiggyBank, Receipt, Settings, Users, Wallet } from 'lucide-react';
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
-import { DEFAULT_LOGO } from '../config.js';
+import { DEFAULT_LOGO, REQUIRED_API } from '../config.js';
 import { Avatar, Field, Modal, useUi } from '../ui.jsx';
 import { fileToResizedBase64, hariTgl, termOptions } from '../utils.js';
 
@@ -11,12 +11,14 @@ export const MENU = [
   { path: 'siswa', label: 'Data Siswa', icon: GraduationCap, roles: ['admin'] },
   { path: 'anggota', label: 'Anggota Futsal', icon: Users, roles: ['admin'] },
   { path: 'kartu', label: 'Kartu Anggota', icon: CreditCard, roles: ['admin', 'anggota'] },
+  { path: 'galeri', label: 'Galeri', icon: Images, roles: ['admin', 'anggota'] },
   { path: 'hadir', label: 'Daftar Hadir', icon: ClipboardCheck, roles: ['admin'] },
   { path: 'jadwal', label: 'Jadwal Pertandingan', icon: CalendarDays, roles: ['admin'] },
   { path: 'formasi', label: 'Formasi', icon: LayoutGrid, roles: ['admin'] },
   { path: 'nilai', label: 'Nilai', icon: Award, roles: ['admin'] },
   { path: 'rekap-hadir', label: 'Rekap Kehadiran', icon: ClipboardCheck, roles: ['admin', 'anggota'] },
   { path: 'rekap-iuran', label: 'Rekap Iuran', icon: Coins, roles: ['admin'] },
+  { path: 'pemasukan', label: 'Pemasukan Kas', icon: Banknote, roles: ['admin'] },
   { path: 'pengeluaran', label: 'Pengeluaran Kas', icon: Receipt, roles: ['admin'] },
   { path: 'rekap-kas', label: 'Rekap Keuangan', icon: PiggyBank, roles: ['admin'] },
   { path: 'pengaturan', label: 'Pengaturan', icon: Settings, roles: ['admin'] }
@@ -50,7 +52,7 @@ function PasswordModal({ open, onClose }) {
 }
 
 export default function Layout({ route, children }) {
-  const { user, setUser, settings, term, setTerm, logout, isAdmin } = useAuth();
+  const { user, setUser, settings, term, setTerm, logout, isAdmin, apiVersion } = useAuth();
   const { toast } = useUi();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -84,7 +86,7 @@ export default function Layout({ route, children }) {
 
   const bottom = isAdmin
     ? [['dashboard', 'Home', Home], ['hadir', 'Hadir', ClipboardCheck], ['rekap-kas', 'Kas', Wallet], ['kartu', 'Kartu', CreditCard]]
-    : [['dashboard', 'Home', Home], ['rekap-hadir', 'Hadir', ClipboardCheck], ['kartu', 'Kartu', CreditCard]];
+    : [['dashboard', 'Home', Home], ['rekap-hadir', 'Hadir', ClipboardCheck], ['kartu', 'Kartu', CreditCard], ['galeri', 'Galeri', Images]];
 
   return (
     <div className={(open ? 'open ' : '') + (collapsed ? 'collapsed' : '')}>
@@ -141,7 +143,12 @@ export default function Layout({ route, children }) {
           </div>
           <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPhoto} />
         </header>
-        <main className="content">{children}</main>
+        <main className="content">
+          {isAdmin && apiVersion !== REQUIRED_API && (
+            <div className="warnbar" role="alert">Backend (Google Apps Script) belum diperbarui ke versi terbaru. Tempel Code.gs terbaru, lalu Deploy &gt; Manage deployments &gt; Edit &gt; Version: New version &gt; Deploy. Sebelum itu, fitur baru (saldo awal terkunci, pemasukan, nota, galeri) belum berfungsi.</div>
+          )}
+          {children}
+        </main>
       </div>
       <nav className="bottom-nav">
         {bottom.map(([p, l, I]) => <a key={p} href={'#/' + p} className={route === p ? 'on' : ''}><I size={21} />{l}</a>)}

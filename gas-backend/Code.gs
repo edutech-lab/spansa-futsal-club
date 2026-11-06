@@ -7,6 +7,8 @@
  */
 
 /* ===================== KONFIGURASI ===================== */
+const API_VERSION = '2026.11.06';
+
 const APP = {
   TZ: 'Asia/Jakarta',
   SESSION_HOURS: 12,
@@ -27,7 +29,9 @@ const SCHEMA = {
   Jadwal: ['id', 'tanggal', 'jam', 'lawan', 'lokasi', 'jenis', 'catatan', 'createdAt'],
   Formasi: ['jadwalId', 'pola', 'lineup', 'cadangan', 'updatedAt'],
   Nilai: ['nisn', 'tahunAjaran', 'persenHadir', 'kemampuan', 'total', 'predikat', 'updatedAt'],
-  Pengeluaran: ['id', 'tanggal', 'keterangan', 'nominal', 'jumlah', 'total', 'buktiUrl', 'createdAt'],
+  Pengeluaran: ['id', 'tanggal', 'keterangan', 'nominal', 'jumlah', 'total', 'buktiUrl', 'createdAt', 'kategori', 'penerima', 'noNota'],
+  Pemasukan: ['id', 'tanggal', 'kategori', 'keterangan', 'nominal', 'jumlah', 'total', 'buktiUrl', 'createdAt'],
+  Galeri: ['id', 'judul', 'album', 'tanggal', 'tipe', 'fileId', 'url', 'thumb', 'createdAt'],
   Log: ['waktu', 'user', 'action', 'detail']
 };
 
@@ -37,7 +41,8 @@ const NUMERIC = {
   Pertemuan: ['iuran'],
   Presensi: ['iuran'],
   Nilai: ['persenHadir', 'kemampuan', 'total'],
-  Pengeluaran: ['nominal', 'jumlah', 'total']
+  Pengeluaran: ['nominal', 'jumlah', 'total'],
+  Pemasukan: ['nominal', 'jumlah', 'total']
 };
 
 const SETTINGS_DEFAULT = {
@@ -50,6 +55,10 @@ const SETTINGS_DEFAULT = {
   instagram: 'spansa_official',
   bannerUrl: '',
   saldoAwalKas: '0',
+  saldoAwalTerkunci: '0',
+  saldoAwalCatatan: '',
+  namaBendahara: '',
+  namaPembina: '',
   iuranPerPertemuan: '5000',
   bobotHadir: '70',
   bobotIndividu: '30',
@@ -57,8 +66,9 @@ const SETTINGS_DEFAULT = {
   batasB: '75',
   batasC: '60'
 };
-const SETTINGS_EDITABLE = Object.keys(SETTINGS_DEFAULT);
-const SETTINGS_PRIVATE = ['folderRoot', 'folderFoto', 'folderBukti', 'folderBackup'];
+const SETTINGS_SYSTEM = ['saldoAwalTerkunci', 'saldoAwalCatatan'];
+const SETTINGS_EDITABLE = Object.keys(SETTINGS_DEFAULT).filter(function (k) { return SETTINGS_SYSTEM.indexOf(k) < 0; });
+const SETTINGS_PRIVATE = ['folderRoot', 'folderFoto', 'folderBukti', 'folderBackup', 'folderGaleri'];
 const POLA_OK = ['1-2-1', '2-2', '3-1', '1-1-2'];
 const JENIS_OK = ['Persahabatan', 'Turnamen', 'Liga', 'Latih Tanding'];
 
@@ -79,6 +89,7 @@ const ROUTES = {
   updatePhoto: { write: true, fn: updatePhoto_ },
   imageData: { fn: imageData_ },
   saveSettings: { admin: true, write: true, fn: saveSettings_ },
+  unlockSaldoAwal: { admin: true, write: true, fn: unlockSaldoAwal_ },
   listSiswa: { admin: true, fn: listSiswa_ },
   saveSiswa: { admin: true, write: true, fn: saveSiswa_ },
   deleteSiswa: { admin: true, write: true, fn: deleteSiswa_ },
@@ -103,15 +114,21 @@ const ROUTES = {
   upcoming: { fn: upcoming_ },
   getFormasi: { admin: true, fn: getFormasi_ },
   saveFormasi: { admin: true, write: true, fn: saveFormasi_ },
-  listPengeluaran: { admin: true, fn: listPengeluaran_ },
-  savePengeluaran: { admin: true, write: true, fn: savePengeluaran_ },
-  deletePengeluaran: { admin: true, write: true, fn: deletePengeluaran_ },
+  listPengeluaran: { admin: true, fn: function (p) { return listTrx_('Pengeluaran', p); } },
+  savePengeluaran: { admin: true, write: true, fn: function (p, c) { return saveTrx_('Pengeluaran', p, c); } },
+  deletePengeluaran: { admin: true, write: true, fn: function (p, c) { return deleteTrx_('Pengeluaran', p, c); } },
+  listPemasukan: { admin: true, fn: function (p) { return listTrx_('Pemasukan', p); } },
+  savePemasukan: { admin: true, write: true, fn: function (p, c) { return saveTrx_('Pemasukan', p, c); } },
+  deletePemasukan: { admin: true, write: true, fn: function (p, c) { return deleteTrx_('Pemasukan', p, c); } },
+  listGaleri: { fn: listGaleri_ },
+  saveGaleri: { admin: true, write: true, fn: saveGaleri_ },
+  deleteGaleri: { admin: true, write: true, fn: deleteGaleri_ },
   rekapKas: { admin: true, fn: rekapKas_ },
   dashboard: { fn: dashboard_ }
 };
 
 function doGet() {
-  return out_({ success: true, message: 'Spansa Futsal Club API aktif', data: { waktu: now_() } });
+  return out_({ success: true, message: 'Spansa Futsal Club API aktif', data: { waktu: now_(), version: API_VERSION } });
 }
 
 function doPost(e) {
@@ -162,19 +179,23 @@ function handle_(req) {
 }
 
 /* ===================== SETUP (dijalankan manual dari editor) ===================== */
+function ensureSheet_(name) {
+  const ss = ss_();
+  const cols = SCHEMA[name];
+  const sh = ss.getSheetByName(name) || ss.insertSheet(name);
+  if (sh.getMaxColumns() < cols.length) sh.insertColumnsAfter(sh.getMaxColumns(), cols.length - sh.getMaxColumns());
+  sh.getRange(1, 1, 1, cols.length).setValues([cols]).setFontWeight('bold').setBackground('#0A2A94').setFontColor('#FFFFFF');
+  sh.setFrozenRows(1);
+  const rows = Math.max(sh.getMaxRows() - 1, 1);
+  cols.forEach(function (c, i) {
+    sh.getRange(2, i + 1, rows, 1).setNumberFormat(isNumeric_(name, c) ? '0' : '@');
+  });
+  return sh;
+}
+
 function setupDatabase() {
   const ss = ss_();
-  Object.keys(SCHEMA).forEach(function (name) {
-    const cols = SCHEMA[name];
-    const sh = ss.getSheetByName(name) || ss.insertSheet(name);
-    if (sh.getMaxColumns() < cols.length) sh.insertColumnsAfter(sh.getMaxColumns(), cols.length - sh.getMaxColumns());
-    sh.getRange(1, 1, 1, cols.length).setValues([cols]).setFontWeight('bold').setBackground('#0A2A94').setFontColor('#FFFFFF');
-    sh.setFrozenRows(1);
-    const rows = Math.max(sh.getMaxRows() - 1, 1);
-    cols.forEach(function (c, i) {
-      sh.getRange(2, i + 1, rows, 1).setNumberFormat(isNumeric_(name, c) ? '0' : '@');
-    });
-  });
+  Object.keys(SCHEMA).forEach(function (name) { ensureSheet_(name); });
   const def = ss.getSheetByName('Sheet1') || ss.getSheetByName('Sheet 1') || ss.getSheetByName('Lembar1');
   if (def && ss.getSheets().length > 1 && def.getLastRow() <= 1) ss.deleteSheet(def);
   resetCache_();
@@ -267,8 +288,12 @@ function ss_() {
 }
 
 function sheet_(name) {
-  const sh = ss_().getSheetByName(name);
-  if (!sh) throw new AppError('Database belum disiapkan. Jalankan setupDatabase() di editor Apps Script.', 'SETUP');
+  let sh = ss_().getSheetByName(name);
+  if (!sh) {
+    // sheet baru dari pembaruan aplikasi dibuat otomatis, asalkan database sudah pernah disiapkan
+    if (SCHEMA[name] && ss_().getSheetByName('Users')) sh = ensureSheet_(name);
+    else throw new AppError('Database belum disiapkan. Jalankan setupDatabase() di editor Apps Script.', 'SETUP');
+  }
   return sh;
 }
 
@@ -367,12 +392,17 @@ function upsertSettings_(obj) {
 
 function publicInfo_() {
   const s = getSettings_();
-  return { namaKlub: s.namaKlub, namaSekolah: s.namaSekolah, logoUrl: s.logoUrl };
+  return { namaKlub: s.namaKlub, namaSekolah: s.namaSekolah, logoUrl: s.logoUrl, version: API_VERSION };
 }
 
 function saveSettings_(p, ctx) {
   const input = p.settings || {};
   const merged = getSettings_();
+  const cur = getSettings_();
+  const locked = cur.saldoAwalTerkunci === '1';
+  if (input.saldoAwalKas !== undefined && locked && String(input.saldoAwalKas).trim() !== String(cur.saldoAwalKas)) {
+    throw new AppError('Saldo awal kas terkunci. Klik "Buka Kunci" terlebih dahulu untuk mengubahnya.', 'LOCKED');
+  }
   const out = {};
   SETTINGS_EDITABLE.forEach(function (k) {
     if (input[k] !== undefined) { out[k] = String(input[k]).trim(); merged[k] = out[k]; }
@@ -396,8 +426,24 @@ function saveSettings_(p, ctx) {
   num('batasA', 0, 100); num('batasB', 0, 100); num('batasC', 0, 100);
   if (Number(merged.bobotHadir) + Number(merged.bobotIndividu) !== 100) throw new AppError('Total bobot kehadiran dan kemampuan individu harus 100%', 'VALID');
   if (!(Number(merged.batasA) > Number(merged.batasB) && Number(merged.batasB) > Number(merged.batasC))) throw new AppError('Batas predikat harus A > B > C', 'VALID');
+  ['namaBendahara', 'namaPembina'].forEach(function (k) {
+    if (!/^[^<>]{0,60}$/.test(merged[k])) throw new AppError('Nama penandatangan maksimal 60 karakter', 'VALID');
+  });
+  if (input.saldoAwalKas !== undefined) {
+    if (Number(merged.saldoAwalKas) > 0) {
+      if (!locked) { out.saldoAwalTerkunci = '1'; out.saldoAwalCatatan = today_() + ' oleh ' + ctx.username; }
+    } else {
+      out.saldoAwalTerkunci = '0'; out.saldoAwalCatatan = '';
+    }
+  }
   upsertSettings_(out);
   log_(ctx.username, 'saveSettings', Object.keys(out).join(','));
+  return publicSettings_();
+}
+
+function unlockSaldoAwal_(p, ctx) {
+  upsertSettings_({ saldoAwalTerkunci: '0' });
+  log_(ctx.username, 'unlockSaldoAwal', 'saldo ' + getSettings_().saldoAwalKas);
   return publicSettings_();
 }
 
@@ -470,12 +516,12 @@ function login_(p) {
   sessions.push({ tokenHash: sha256hex_(token), userId: u.userId, role: u.role, nisn: u.nisn, expiresAt: Date.now() + APP.SESSION_HOURS * 3600 * 1000 });
   writeTable_('Sessions', sessions);
   log_(u.username, 'login', u.role);
-  return { token: token, user: userOut_(u), settings: publicSettings_() };
+  return { token: token, user: userOut_(u), settings: publicSettings_(), version: API_VERSION };
 }
 
 function me_(p, ctx) {
   const u = readTable_('Users').filter(function (x) { return x.userId === ctx.userId; })[0];
-  return { user: userOut_(u), settings: publicSettings_() };
+  return { user: userOut_(u), settings: publicSettings_(), version: API_VERSION };
 }
 
 function logout_(p, ctx) {
@@ -1071,15 +1117,35 @@ function saveFormasi_(p, ctx) {
   return { ok: true };
 }
 
-/* ===================== PENGELUARAN & KEUANGAN ===================== */
-function listPengeluaran_(p) {
-  const tr = termRange_(p.term);
-  return readTable_('Pengeluaran').filter(function (x) { return inRange_(x.tanggal, tr); }).sort(function (a, b) { return a.tanggal < b.tanggal ? 1 : -1; }).map(function (x) {
-    return { id: x.id, tanggal: x.tanggal, keterangan: x.keterangan, nominal: Number(x.nominal), jumlah: Number(x.jumlah), total: Number(x.total), buktiUrl: x.buktiUrl };
-  });
+/* ===================== TRANSAKSI KAS (PENGELUARAN & PEMASUKAN LAIN) ===================== */
+const TRX = {
+  Pengeluaran: { kategori: ['Umum', 'Pelatih'], def: 'Umum', label: 'pengeluaran' },
+  Pemasukan: { kategori: ['Donasi', 'Sponsor', 'Bantuan Sekolah', 'Penjualan', 'Lainnya'], def: 'Lainnya', label: 'pemasukan' }
+};
+
+function trxOut_(sheet, x) {
+  return { id: x.id, tanggal: x.tanggal, kategori: x.kategori || TRX[sheet].def, keterangan: x.keterangan, nominal: Number(x.nominal), jumlah: Number(x.jumlah), total: Number(x.total), buktiUrl: x.buktiUrl, penerima: x.penerima || '', noNota: x.noNota || '' };
 }
 
-function savePengeluaran_(p, ctx) {
+function listTrx_(sheet, p) {
+  const tr = termRange_(p.term);
+  return readTable_(sheet).filter(function (x) { return inRange_(x.tanggal, tr); }).sort(function (a, b) {
+    return (a.tanggal + a.createdAt) < (b.tanggal + b.createdAt) ? 1 : -1;
+  }).map(function (x) { return trxOut_(sheet, x); });
+}
+
+function nextNota_(rows, tanggal) {
+  const prefix = 'NP/' + tanggal.slice(0, 4) + '/' + tanggal.slice(5, 7) + '/';
+  let max = 0;
+  rows.forEach(function (r) {
+    if (r.noNota && String(r.noNota).indexOf(prefix) === 0) max = Math.max(max, Number(String(r.noNota).slice(prefix.length)) || 0);
+  });
+  const n = String(max + 1);
+  return prefix + (n.length < 3 ? ('000' + n).slice(-3) : n);
+}
+
+function saveTrx_(sheet, p, ctx) {
+  const cfg = TRX[sheet];
   const it = p.item || {};
   const tanggal = String(it.tanggal || '').trim();
   const nominal = Number(it.nominal);
@@ -1089,45 +1155,60 @@ function savePengeluaran_(p, ctx) {
   if (!ket) throw new AppError('Keterangan wajib diisi', 'VALID');
   if (!isFinite(nominal) || nominal < 1 || nominal > 1000000000 || Math.floor(nominal) !== nominal) throw new AppError('Nominal harus bilangan bulat lebih dari 0', 'VALID');
   if (!isFinite(jumlah) || jumlah < 1 || jumlah > 100000 || Math.floor(jumlah) !== jumlah) throw new AppError('Jumlah harus bilangan bulat lebih dari 0', 'VALID');
-  const rows = readTable_('Pengeluaran');
+  const kat = str_(it.kategori, 30) || cfg.def;
+  if (cfg.kategori.indexOf(kat) < 0) throw new AppError('Kategori tidak valid', 'VALID');
+  const rows = readTable_(sheet);
   let row;
   if (it.id) {
     row = rows.filter(function (x) { return x.id === String(it.id); })[0];
-    if (!row) throw new AppError('Data pengeluaran tidak ditemukan', 'NOTFOUND');
+    if (!row) throw new AppError('Data ' + cfg.label + ' tidak ditemukan', 'NOTFOUND');
   } else {
-    row = { id: newId_('X'), buktiUrl: '', createdAt: now_() };
+    row = { id: newId_(sheet === 'Pengeluaran' ? 'X' : 'M'), buktiUrl: '', createdAt: now_() };
     rows.push(row);
   }
   row.tanggal = tanggal;
   row.keterangan = ket;
+  row.kategori = kat;
   row.nominal = nominal;
   row.jumlah = jumlah;
   row.total = nominal * jumlah;
+  if (sheet === 'Pengeluaran') {
+    if (kat === 'Pelatih') {
+      const pen = str_(it.penerima, 80);
+      if (!pen) throw new AppError('Nama pelatih wajib diisi', 'VALID');
+      row.penerima = pen;
+      if (!row.noNota) row.noNota = nextNota_(rows, tanggal);
+    } else {
+      row.penerima = '';
+      row.noNota = '';
+    }
+  }
   const b = p.bukti;
   if (b && b.data) {
     const mime = String(b.mime || '');
     if (['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].indexOf(mime) < 0) throw new AppError('Bukti harus JPG, PNG, WEBP, atau PDF', 'VALID');
     if (String(b.data).length > 5600000) throw new AppError('Ukuran bukti maksimal 4 MB', 'VALID');
     const ext = mime === 'application/pdf' ? 'pdf' : mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
-    const file = saveFile_(rawSettings_().folderBukti, 'bukti_' + tanggal + '_' + row.id + '.' + ext, mime, b.data);
+    const file = saveFile_(rawSettings_().folderBukti, 'bukti_' + cfg.label + '_' + tanggal + '_' + row.id + '.' + ext, mime, b.data);
     if (row.buktiUrl) trashByUrl_(row.buktiUrl);
     row.buktiUrl = file.getUrl();
   }
-  writeTable_('Pengeluaran', rows);
-  log_(ctx.username, 'savePengeluaran', ket + ' ' + row.total);
-  return { id: row.id, total: row.total };
+  writeTable_(sheet, rows);
+  log_(ctx.username, 'save' + sheet, ket + ' ' + row.total);
+  return { id: row.id, total: row.total, noNota: row.noNota || '' };
 }
 
-function deletePengeluaran_(p, ctx) {
-  const rows = readTable_('Pengeluaran');
+function deleteTrx_(sheet, p, ctx) {
+  const rows = readTable_(sheet);
   const row = rows.filter(function (x) { return x.id === String(p.id); })[0];
-  if (!row) throw new AppError('Data pengeluaran tidak ditemukan', 'NOTFOUND');
-  writeTable_('Pengeluaran', rows.filter(function (x) { return x.id !== row.id; }));
+  if (!row) throw new AppError('Data ' + TRX[sheet].label + ' tidak ditemukan', 'NOTFOUND');
+  writeTable_(sheet, rows.filter(function (x) { return x.id !== row.id; }));
   if (row.buktiUrl) trashByUrl_(row.buktiUrl);
-  log_(ctx.username, 'deletePengeluaran', row.id);
+  log_(ctx.username, 'delete' + sheet, row.id);
   return { ok: true };
 }
 
+/* ===================== KEUANGAN ===================== */
 function financeData_() {
   const meetDate = {};
   readTable_('Pertemuan').forEach(function (m) { meetDate[m.id] = m.tanggal; });
@@ -1136,28 +1217,120 @@ function financeData_() {
     const t = meetDate[x.pertemuanId];
     if (t && Number(x.iuran) > 0) incomes.push({ tanggal: t, nominal: Number(x.iuran) });
   });
+  const others = readTable_('Pemasukan').map(function (x) { return { tanggal: x.tanggal, nominal: Number(x.total) }; });
   const spends = readTable_('Pengeluaran').map(function (x) { return { tanggal: x.tanggal, nominal: Number(x.total) }; });
-  return { incomes: incomes, spends: spends };
+  return { incomes: incomes, others: others, spends: spends };
 }
 
 function sumBefore_(arr, from) { let s = 0; arr.forEach(function (x) { if (x.tanggal < from) s += x.nominal; }); return s; }
+function sumMonth_(arr, b) { let s = 0; arr.forEach(function (x) { if (x.tanggal.slice(0, 7) === b) s += x.nominal; }); return s; }
 
 function kasOf_(term, fin) {
   const tr = termRange_(term);
-  const saldoAwal = (Number(getSettings_().saldoAwalKas) || 0) + sumBefore_(fin.incomes, tr.from) - sumBefore_(fin.spends, tr.from);
-  let saldo = saldoAwal, tm = 0, tk = 0;
+  const base = Number(getSettings_().saldoAwalKas) || 0;
+  const saldoAwal = base + sumBefore_(fin.incomes, tr.from) + sumBefore_(fin.others, tr.from) - sumBefore_(fin.spends, tr.from);
+  let saldo = saldoAwal, tm = 0, tl = 0, tk = 0;
   const rows = tr.months.map(function (b) {
-    let masuk = 0, keluar = 0;
-    fin.incomes.forEach(function (x) { if (x.tanggal.slice(0, 7) === b) masuk += x.nominal; });
-    fin.spends.forEach(function (x) { if (x.tanggal.slice(0, 7) === b) keluar += x.nominal; });
-    saldo += masuk - keluar;
-    tm += masuk; tk += keluar;
-    return { bulan: b, masuk: masuk, keluar: keluar, saldo: saldo };
+    const masuk = sumMonth_(fin.incomes, b);
+    const masukLain = sumMonth_(fin.others, b);
+    const keluar = sumMonth_(fin.spends, b);
+    saldo += masuk + masukLain - keluar;
+    tm += masuk; tl += masukLain; tk += keluar;
+    return { bulan: b, masuk: masuk, masukLain: masukLain, keluar: keluar, saldo: saldo };
   });
-  return { saldoAwal: saldoAwal, rows: rows, totalMasuk: tm, totalKeluar: tk, saldoAkhir: saldo };
+  return { saldoAwal: saldoAwal, rows: rows, totalMasuk: tm, totalMasukLain: tl, totalKeluar: tk, saldoAkhir: saldo };
 }
 
 function rekapKas_(p) { return kasOf_(p.term, financeData_()); }
+
+/* ===================== GALERI ===================== */
+function parseMediaLink_(url) {
+  url = String(url || '').trim();
+  if (!/^https:\/\/\S{4,500}$/.test(url)) throw new AppError('Tautan harus diawali https://', 'VALID');
+  if (/^https:\/\/drive\.google\.com\/drive\/(u\/\d+\/)?folders\//.test(url)) throw new AppError('Tautan folder tidak didukung. Gunakan tautan berkas (file) Google Drive.', 'VALID');
+  let m = /^https:\/\/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:[^#\s]*&)?id=|thumbnail\?(?:[^#\s]*&)?id=)([-\w]{20,})/.exec(url) ||
+    /^https:\/\/lh3\.googleusercontent\.com\/d\/([-\w]{20,})/.exec(url);
+  if (m) return { tipe: 'drive', fileId: m[1], url: 'https://drive.google.com/file/d/' + m[1] + '/view', thumb: 'https://lh3.googleusercontent.com/d/' + m[1] + '=w640' };
+  m = /^https:\/\/(?:www\.|m\.)?youtube\.com\/(?:watch\?(?:[^#\s]*&)?v=|shorts\/|embed\/)([-\w]{11})/.exec(url) || /^https:\/\/youtu\.be\/([-\w]{11})/.exec(url);
+  if (m) return { tipe: 'youtube', fileId: m[1], url: 'https://www.youtube.com/watch?v=' + m[1], thumb: 'https://img.youtube.com/vi/' + m[1] + '/hqdefault.jpg' };
+  if (/^https:\/\/[^\s?#]+\.(?:jpe?g|png|webp|gif)(?:[?#]\S*)?$/i.test(url)) return { tipe: 'gambar', fileId: '', url: url, thumb: url };
+  throw new AppError('Tautan tidak didukung. Gunakan tautan berkas Google Drive, YouTube, atau alamat gambar langsung (.jpg, .png, .webp).', 'VALID');
+}
+
+function galeriFolderId_() {
+  const s = rawSettings_();
+  if (s.folderGaleri) {
+    try { DriveApp.getFolderById(s.folderGaleri); return s.folderGaleri; } catch (e) { /* buat ulang */ }
+  }
+  let root = null;
+  if (s.folderRoot) { try { root = DriveApp.getFolderById(s.folderRoot); } catch (e) { root = null; } }
+  if (!root) { ensureFolders_(); root = DriveApp.getFolderById(rawSettings_().folderRoot); }
+  const it = root.getFoldersByName('Galeri');
+  const f = it.hasNext() ? it.next() : root.createFolder('Galeri');
+  upsertSettings_({ folderGaleri: f.getId() });
+  return f.getId();
+}
+
+function galeriOut_(g) {
+  return { id: g.id, judul: g.judul, album: g.album, tanggal: g.tanggal, tipe: g.tipe, fileId: g.fileId, url: g.url, thumb: g.thumb };
+}
+
+function listGaleri_() {
+  return readTable_('Galeri').sort(function (a, b) { return (a.tanggal + a.createdAt) < (b.tanggal + b.createdAt) ? 1 : -1; }).map(galeriOut_);
+}
+
+function saveGaleri_(p, ctx) {
+  const it = p.item || {};
+  const tanggal = String(it.tanggal || '').trim() || today_();
+  if (!validDate_(tanggal)) throw new AppError('Tanggal tidak valid', 'VALID');
+  const album = str_(it.album, 30) || 'Lainnya';
+  const rows = readTable_('Galeri');
+  if (it.id) {
+    const g = rows.filter(function (x) { return x.id === String(it.id); })[0];
+    if (!g) throw new AppError('Item galeri tidak ditemukan', 'NOTFOUND');
+    const jd = str_(it.judul, 80);
+    if (!jd) throw new AppError('Judul wajib diisi', 'VALID');
+    g.judul = jd; g.album = album; g.tanggal = tanggal;
+    writeTable_('Galeri', rows);
+    return galeriOut_(g);
+  }
+  if (rows.length >= 1000) throw new AppError('Galeri sudah mencapai batas 1000 item', 'VALID');
+  const row = { id: newId_('G'), judul: str_(it.judul, 80), album: album, tanggal: tanggal, createdAt: now_() };
+  if (p.file && p.file.data) {
+    const mime = String(p.file.mime || '');
+    if (['image/jpeg', 'image/png', 'image/webp'].indexOf(mime) < 0) throw new AppError('Galeri hanya menerima gambar JPG, PNG, atau WEBP', 'VALID');
+    let bytes;
+    try { bytes = Utilities.base64Decode(String(p.file.data)); } catch (e) { throw new AppError('Data berkas tidak valid', 'VALID'); }
+    if (bytes.length > 512000) throw new AppError('Ukuran file melebihi 500 KB. Kompres gambar terlebih dahulu.', 'VALID');
+    const ext = mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
+    const file = saveFile_(galeriFolderId_(), 'galeri_' + row.id + '.' + ext, mime, p.file.data);
+    row.tipe = 'upload';
+    row.fileId = file.getId();
+    row.url = 'https://lh3.googleusercontent.com/d/' + row.fileId;
+    row.thumb = row.url + '=w640';
+    if (!row.judul) row.judul = str_(String(p.file.name || 'Foto').replace(/\.[^.]+$/, ''), 80) || 'Foto';
+  } else if (p.link) {
+    const m = parseMediaLink_(p.link);
+    row.tipe = m.tipe; row.fileId = m.fileId; row.url = m.url; row.thumb = m.thumb;
+    if (!row.judul) row.judul = m.tipe === 'youtube' ? 'Video YouTube' : 'Foto';
+  } else {
+    throw new AppError('Pilih file atau isi tautan', 'VALID');
+  }
+  rows.push(row);
+  writeTable_('Galeri', rows);
+  log_(ctx.username, 'saveGaleri', row.tipe + ' ' + row.judul);
+  return galeriOut_(row);
+}
+
+function deleteGaleri_(p, ctx) {
+  const rows = readTable_('Galeri');
+  const g = rows.filter(function (x) { return x.id === String(p.id); })[0];
+  if (!g) throw new AppError('Item galeri tidak ditemukan', 'NOTFOUND');
+  writeTable_('Galeri', rows.filter(function (x) { return x.id !== g.id; }));
+  if (g.tipe === 'upload' && g.fileId) { try { DriveApp.getFileById(g.fileId).setTrashed(true); } catch (e) { /* sudah tidak ada */ } }
+  log_(ctx.username, 'deleteGaleri', g.id);
+  return { ok: true };
+}
 
 /* ===================== DASHBOARD ===================== */
 function rp_(n) { return 'Rp' + String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
@@ -1201,7 +1374,7 @@ function dashboard_(p, ctx) {
     act.sort(function (a, b) { return a.waktu < b.waktu ? 1 : -1; });
     base.stats = { anggota: activeMembers_().length, jadwalMendatang: up.length, pemasukan: pemasukan, saldo: kas.saldoAkhir };
     base.kehadiran = keh;
-    base.kas = kas.rows.map(function (r) { return { bulan: r.bulan, masuk: r.masuk, keluar: r.keluar }; });
+    base.kas = kas.rows.map(function (r) { return { bulan: r.bulan, masuk: r.masuk + r.masukLain, keluar: r.keluar }; });
     base.aktivitas = act.slice(0, 6);
     return base;
   }

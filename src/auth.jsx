@@ -19,6 +19,7 @@ export function AuthProvider({ children }) {
   const [settings, setSettings] = useState({});
   const [term, setTermState] = useState(initialTerm);
   const [booting, setBooting] = useState(!!getToken());
+  const [apiVersion, setApiVersion] = useState('');
 
   const setTerm = useCallback((t) => {
     setTermState(t);
@@ -28,7 +29,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     setExpiredHandler(() => { setUser(null); });
     if (!getToken()) return;
-    api('me').then((d) => { setUser(d.user); setSettings(d.settings); }).catch(() => { setToken(''); }).finally(() => setBooting(false));
+    api('me').then((d) => { setUser(d.user); setSettings(d.settings); setApiVersion(d.version || 'lama'); }).catch(() => { setToken(''); }).finally(() => setBooting(false));
   }, []);
 
   const login = useCallback(async (username, password, selTerm) => {
@@ -36,6 +37,7 @@ export function AuthProvider({ children }) {
     setToken(d.token);
     setTerm(selTerm);
     setSettings(d.settings);
+    setApiVersion(d.version || 'lama');
     setUser(d.user);
   }, [setTerm]);
 
@@ -45,6 +47,6 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
-  const value = { user, setUser, settings, setSettings, term, setTerm, login, logout, booting, isAdmin: !!user && user.role === 'admin' };
+  const value = { apiVersion, user, setUser, settings, setSettings, term, setTerm, login, logout, booting, isAdmin: !!user && user.role === 'admin' };
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }

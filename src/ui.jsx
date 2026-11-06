@@ -40,15 +40,26 @@ export function UiProvider({ children }) {
   );
 }
 
+const modalStack = [];
 export function Modal({ open, title, onClose, children, footer, wide }) {
+  const idRef = useRef(Symbol('modal'));
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
   useEffect(() => {
     if (!open) return undefined;
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    const id = idRef.current;
+    modalStack.push(id);
+    const onKey = (e) => { if (e.key === 'Escape' && modalStack[modalStack.length - 1] === id) closeRef.current(); };
     document.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
-  }, [open, onClose]);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      const i = modalStack.indexOf(id);
+      if (i >= 0) modalStack.splice(i, 1);
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
   if (!open) return null;
   return (
     <div className="modal-bg" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>

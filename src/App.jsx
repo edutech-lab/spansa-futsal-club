@@ -14,12 +14,14 @@ import Nilai from './pages/Nilai.jsx';
 import RekapHadir from './pages/RekapHadir.jsx';
 import RekapIuran from './pages/RekapIuran.jsx';
 import Pengeluaran from './pages/Pengeluaran.jsx';
+import Pemasukan from './pages/Pemasukan.jsx';
+import Galeri from './pages/Galeri.jsx';
 import RekapKas from './pages/RekapKas.jsx';
 import Pengaturan from './pages/Pengaturan.jsx';
 
 const PAGES = {
   dashboard: Dashboard, siswa: Siswa, anggota: Anggota, kartu: Kartu, hadir: Hadir, jadwal: Jadwal, formasi: Formasi,
-  nilai: Nilai, 'rekap-hadir': RekapHadir, 'rekap-iuran': RekapIuran, pengeluaran: Pengeluaran, 'rekap-kas': RekapKas, pengaturan: Pengaturan
+  nilai: Nilai, 'rekap-hadir': RekapHadir, 'rekap-iuran': RekapIuran, pengeluaran: Pengeluaran, pemasukan: Pemasukan, galeri: Galeri, 'rekap-kas': RekapKas, pengaturan: Pengaturan
 };
 
 class ErrorBoundary extends Component {

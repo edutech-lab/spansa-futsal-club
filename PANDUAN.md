@@ -2,14 +2,16 @@
 SMP Negeri 1 Bandar Lampung · Frontend React + Vite (GitHub → Vercel) · Backend Google Apps Script · Database Google Sheets
 
 ## 0. Catatan revisi terbaru
-- **Backend berubah:** setelah mengganti `Code.gs`, wajib **Deploy > Manage deployments > Edit > Version: New version > Deploy**. Tanpa langkah ini Web App tetap memakai kode lama. Tidak perlu menjalankan ulang `setupDatabase()`; pengaturan baru terisi otomatis dengan nilai bawaan.
-- **Frontend berubah:** commit dan push ke GitHub, Vercel membangun ulang otomatis.
-- Rekap Iuran kini **khusus admin**: menu dan kartu "Total Iuran Saya" di dashboard dihapus untuk anggota, dan server tidak lagi mengirim data iuran ke anggota.
-- Pengaturan baru (menu Pengaturan > Identitas & Tampilan): URL logo sekolah, website, YouTube, Instagram untuk kartu anggota.
-- **Saldo awal kas** (Pengaturan, paling atas): saldo kas sebelum iuran pertama dicatat. Isi sekali di awal. Nilainya ditambahkan ke saldo awal semua semester pada Rekap Keuangan dan Dashboard, bukan dihitung sebagai pemasukan iuran. Mengubahnya di kemudian hari menggeser seluruh saldo.
-- Form Pengeluaran Kas: jumlah (qty) di samping nominal, total otomatis di bawahnya dengan ukuran lebih besar.
-- Kartu anggota: jenis kelamin dihilangkan, kop dibatasi garis emas dan pemisah vertikal antara klub dan sekolah, footer putih diberi motif abstrak.
-- Perbaikan Formasi: halaman kini menunggu data selesai dimuat; ditambah pengaman agar error satu halaman tidak membuat layar putih.
+**Wajib deploy ulang backend** (versi API `2026.11.06`): tempel `Code.gs` terbaru, lalu **Deploy > Manage deployments > Edit (ikon pensil) > Version: New version > Deploy**. Jangan memilih "New deployment" karena URL `/exec` akan berubah. Setelah itu jalankan `setupDatabase()` sekali lagi (aman, tidak menghapus data) agar judul kolom sheet Pengeluaran diperbarui; sheet baru (Pemasukan, Galeri) juga dibuat otomatis saat pertama dipakai. Frontend: commit dan push ke GitHub.
+
+Cara memastikan backend terbaru: buka URL `/exec` di browser, harus tampil `"version":"2026.11.06"`. Admin juga melihat peringatan kuning di aplikasi bila backend masih lama.
+
+- **Saldo awal tidak berubah di Rekap Keuangan:** pada uji saya (simulasi backend + browser) saldo awal tampil benar, sehingga penyebab paling mungkin Web App masih memakai kode lama (kode lama mengabaikan isian saldo awal tanpa pesan error). Sekarang aplikasi mendeteksi ini: muncul peringatan versi dan pesan saat simpan bila saldo awal tidak tercatat oleh backend.
+- **Saldo awal terkunci:** setelah disimpan (nilai lebih dari 0) kolom terkunci. Tombol **Buka Kunci** di sebelahnya menampilkan peringatan; setelah diubah dan disimpan, terkunci lagi. Server ikut menolak perubahan saat terkunci.
+- **Pengeluaran:** bukti bisa dipratinjau sebelum disimpan (gambar atau PDF) dengan tombol **Lihat penuh**; bukti tersimpan juga dapat dilihat dari tabel. Jenis **Pelatih** membuat nota/kuitansi otomatis (nomor `NP/tahun/bulan/urut`, terbilang, tanda tangan penerima, bendahara, dan pembina) yang bisa dicetak atau diunduh PNG. Nama bendahara dan pembina diisi di Pengaturan.
+- **Pemasukan Kas** (menu baru): pemasukan di luar iuran (donasi, sponsor, bantuan sekolah, penjualan, lainnya) dengan bukti. Masuk ke saldo dan Rekap Keuangan, tetapi tidak dihitung sebagai iuran.
+- **Galeri** (menu baru): admin mengelola, anggota hanya melihat. Tambah lewat **Unggah File** (JPG/PNG/WEBP; foto di atas 500 KB dikompres otomatis ke bawah 500 KB, maksimal 20 foto sekali unggah) atau **Dari Tautan** (berkas Google Drive dengan akses "Siapa saja yang memiliki link", video YouTube, atau alamat gambar langsung). Tautan folder Drive dan video unggahan tidak didukung. Berkas unggahan disimpan di folder Drive **Spansa Futsal Club/Galeri**.
+- Rekap Iuran khusus admin; dashboard anggota tanpa data iuran; kartu anggota tanpa jenis kelamin dengan kop dan footer baru; Formasi diperbaiki.
 
 ## 1. Struktur proyek
 ```
@@ -19,8 +21,8 @@ spansa-futsal-club/
 ├── src/
 │   ├── main.jsx, App.jsx (router hash), auth.jsx, api.js, config.js, utils.js, ui.jsx, styles.css
 │   ├── components/    Layout.jsx (sidebar, header, profil), Banner.jsx (banner vektor), Pitch.jsx (lapangan formasi)
-│   └── pages/         Login, Dashboard, Siswa, Anggota, Kartu, Hadir, Jadwal, Formasi, Nilai,
-│                      RekapHadir, RekapIuran, Pengeluaran, RekapKas, Pengaturan
+│   └── pages/         Login, Dashboard, Siswa, Anggota, Kartu, Galeri, Hadir, Jadwal, Formasi, Nilai,
+│                      RekapHadir, RekapIuran, Transaksi (Pengeluaran/Pemasukan), RekapKas, Pengaturan
 └── gas-backend/       Code.gs, appsscript.json
 ```
 
@@ -31,13 +33,13 @@ spansa-futsal-club/
 4. Di **Project Settings > Script Properties**, tambahkan:
    - `ADMIN_INITIAL_PASSWORD` = password admin awal (minimal 8 karakter, buat sendiri)
    - (opsional) `ADMIN_USERNAME` (default `admin`) dan `ADMIN_NAMA`
-5. Pilih fungsi **setupDatabase** di editor, klik **Run**, setujui izin (Spreadsheet dan Drive). Fungsi ini membuat 12 sheet beserta header, memformat kolom NISN, Kelas, dan tanggal sebagai **teks**, mengisi pengaturan awal, dan membuat folder Drive **Spansa Futsal Club** berisi `Foto Profil`, `Bukti Pengeluaran`, dan `Backup`.
+5. Pilih fungsi **setupDatabase** di editor, klik **Run**, setujui izin (Spreadsheet dan Drive). Fungsi ini membuat 14 sheet beserta header, memformat kolom NISN, Kelas, dan tanggal sebagai **teks**, mengisi pengaturan awal, dan membuat folder Drive **Spansa Futsal Club** berisi `Foto Profil`, `Bukti Pengeluaran`, dan `Backup`.
 6. Jalankan **createAdmin**. Setelah berhasil, **hapus** Script Property `ADMIN_INITIAL_PASSWORD`. Lupa password admin: isi lagi property tersebut, jalankan **resetAdminPassword**, lalu hapus property.
 7. **Deploy > New deployment > Web app**: *Execute as* **Me**, *Who has access* **Anyone**. Salin URL yang berakhiran `/exec`.
    - Akses "Anyone" diperlukan agar aplikasi di Vercel dapat memanggil API tanpa login Google. Data tetap dilindungi: setiap aksi (kecuali login) wajib membawa token sesi yang diverifikasi server, dan hak akses admin/anggota diperiksa di server.
 8. Uji: buka URL `/exec` di browser; harus tampil JSON `"Spansa Futsal Club API aktif"`.
 
-Sheet database: `Users`, `Sessions`, `Settings`, `Siswa`, `Anggota`, `Pertemuan`, `Presensi`, `Jadwal`, `Formasi`, `Nilai`, `Pengeluaran`, `Log`. Jangan mengubah header atau mengisi sheet ini manual kecuali sangat perlu.
+Sheet database: `Users`, `Sessions`, `Settings`, `Siswa`, `Anggota`, `Pertemuan`, `Presensi`, `Jadwal`, `Formasi`, `Nilai`, `Pengeluaran`, `Pemasukan`, `Galeri`, `Log`. Jangan mengubah header atau mengisi sheet ini manual kecuali sangat perlu.
 
 ## 3. Frontend: GitHub dan Vercel
 1. Buat repositori GitHub baru (mis. `spansa-futsal-club`), unggah **seluruh isi folder proyek kecuali `gas-backend` jika ingin dipisah** (aman juga bila ikut). `.gitignore` sudah mengecualikan `node_modules`, `dist`, dan `.env*`.

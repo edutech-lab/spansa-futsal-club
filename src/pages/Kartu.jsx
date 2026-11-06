@@ -5,6 +5,7 @@ import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { DEFAULT_LOGO } from '../config.js';
 import { Card, ErrorBox, Loading, PageHead, useLoad, useUi } from '../ui.jsx';
+import { toData } from '../components/imageData.js';
 import { initials, splitSchool, tglID } from '../utils.js';
 
 const SCHOOL_LOGO = 'https://lh3.googleusercontent.com/d/1GDe6aqXyF_RR6kL3jMCy0vWqaO83jgyp';
@@ -43,13 +44,6 @@ function Kartu({ d, logo, logoSekolah, foto, innerRef }) {
       </div>
     </div>
   );
-}
-
-const cache = new Map();
-async function toData(url) {
-  if (!url) return '';
-  if (cache.has(url)) return cache.get(url);
-  try { const r = await api('imageData', { url }); cache.set(url, r.dataUrl); return r.dataUrl; } catch { return ''; }
 }
 
 function CardView({ data }) {

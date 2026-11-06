@@ -85,6 +85,83 @@ export function splitSchool(name) {
 }
 export const STATUS_LABEL = { H: 'Hadir', S: 'Sakit', I: 'Izin', A: 'Alpa' };
 
+/* ---------- Terbilang (Rupiah) ---------- */
+const SAT = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
+function tb(n) {
+  n = Math.floor(n);
+  if (n < 12) return SAT[n];
+  if (n < 20) return tb(n - 10) + ' belas';
+  if (n < 100) return tb(Math.floor(n / 10)) + ' puluh' + (n % 10 ? ' ' + tb(n % 10) : '');
+  if (n < 200) return 'seratus' + (n - 100 ? ' ' + tb(n - 100) : '');
+  if (n < 1000) return tb(Math.floor(n / 100)) + ' ratus' + (n % 100 ? ' ' + tb(n % 100) : '');
+  if (n < 2000) return 'seribu' + (n - 1000 ? ' ' + tb(n - 1000) : '');
+  if (n < 1e6) return tb(Math.floor(n / 1e3)) + ' ribu' + (n % 1e3 ? ' ' + tb(n % 1e3) : '');
+  if (n < 1e9) return tb(Math.floor(n / 1e6)) + ' juta' + (n % 1e6 ? ' ' + tb(n % 1e6) : '');
+  if (n < 1e12) return tb(Math.floor(n / 1e9)) + ' miliar' + (n % 1e9 ? ' ' + tb(n % 1e9) : '');
+  return tb(Math.floor(n / 1e12)) + ' triliun' + (n % 1e12 ? ' ' + tb(n % 1e12) : '');
+}
+export function terbilang(n) {
+  const v = Math.floor(Number(n) || 0);
+  const t = v <= 0 ? 'nol' : tb(v).trim();
+  return t.charAt(0).toUpperCase() + t.slice(1) + ' rupiah';
+}
+
+/* ---------- Tautan media (Galeri) ---------- */
+export function parseMediaLink(input) {
+  const url = String(input || '').trim();
+  if (!/^https:\/\/\S{4,500}$/.test(url)) throw new Error('Tautan harus diawali https://');
+  if (/^https:\/\/drive\.google\.com\/drive\/(u\/\d+\/)?folders\//.test(url)) throw new Error('Tautan folder tidak didukung. Gunakan tautan berkas (file) Google Drive.');
+  let m = /^https:\/\/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:[^#\s]*&)?id=|thumbnail\?(?:[^#\s]*&)?id=)([-\w]{20,})/.exec(url) || /^https:\/\/lh3\.googleusercontent\.com\/d\/([-\w]{20,})/.exec(url);
+  if (m) return { tipe: 'drive', fileId: m[1], thumb: `https://lh3.googleusercontent.com/d/${m[1]}=w640` };
+  m = /^https:\/\/(?:www\.|m\.)?youtube\.com\/(?:watch\?(?:[^#\s]*&)?v=|shorts\/|embed\/)([-\w]{11})/.exec(url) || /^https:\/\/youtu\.be\/([-\w]{11})/.exec(url);
+  if (m) return { tipe: 'youtube', fileId: m[1], thumb: `https://img.youtube.com/vi/${m[1]}/hqdefault.jpg` };
+  if (/^https:\/\/[^\s?#]+\.(?:jpe?g|png|webp|gif)(?:[?#]\S*)?$/i.test(url)) return { tipe: 'gambar', fileId: '', thumb: url };
+  throw new Error('Tautan tidak didukung. Gunakan tautan berkas Google Drive, YouTube, atau alamat gambar langsung (.jpg, .png, .webp).');
+}
+export function fmtSize(bytes) {
+  return bytes >= 1048576 ? (bytes / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(bytes / 1024)) + ' KB';
+}
+
+/* Kompres gambar hingga di bawah batas (default 500 KB). Gambar yang sudah kecil dipakai apa adanya. */
+export const GALERI_MAX = 500 * 1024;
+export async function compressImage(file, maxBytes = GALERI_MAX - 20 * 1024) {
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type)) throw new Error(`${file.name}: format harus JPG, PNG, atau WEBP`);
+  const toB64 = (blob) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = () => rej(new Error('Berkas tidak dapat dibaca')); r.readAsDataURL(blob); });
+  if (file.size <= GALERI_MAX) return { mime: file.type, data: await toB64(file), name: file.name, size: file.size, original: file.size, compressed: false, preview: URL.createObjectURL(file) };
+  const url = URL.createObjectURL(file);
+  const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error(`${file.name}: gambar tidak dapat dibaca`)); i.src = url; });
+  URL.revokeObjectURL(url);
+  const k0 = Math.min(1, 1920 / Math.max(img.width, img.height));
+  let w = Math.round(img.width * k0);
+  let h = Math.round(img.height * k0);
+  let q = 0.86;
+  for (let i = 0; i < 16; i++) {
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, w); c.height = Math.max(1, h);
+    const g = c.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+    g.drawImage(img, 0, 0, c.width, c.height);
+    const blob = await new Promise((res) => c.toBlob(res, 'image/jpeg', q));
+    if (blob && blob.size <= maxBytes) {
+      return { mime: 'image/jpeg', data: await toB64(blob), name: file.name.replace(/\.[^.]+$/, '') + '.jpg', size: blob.size, original: file.size, compressed: true, preview: URL.createObjectURL(blob) };
+    }
+    if (q > 0.5) q -= 0.12; else { w = Math.round(w * 0.85); h = Math.round(h * 0.85); }
+  }
+  throw new Error(`${file.name}: tidak dapat dikompres hingga di bawah 500 KB`);
+}
+
+/* ---------- Berkas / Drive ---------- */
+export function driveId(url) {
+  const m = /\/d\/([-\w]{20,})/.exec(String(url || '')) || /[?&]id=([-\w]{20,})/.exec(String(url || ''));
+  return m ? m[1] : '';
+}
+export function b64Blob(b64, mime) {
+  const bin = atob(b64);
+  const u = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  return new Blob([u], { type: mime });
+}
+
 /* ---------- Gambar ---------- */
 export function fileToResizedBase64(file, maxSide = 320, quality = 0.82) {
   return new Promise((resolve, reject) => {
