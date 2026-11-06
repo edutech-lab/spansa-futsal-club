@@ -544,3 +544,18 @@ tfoot td{background:#F5F8FD}
 [data-theme="dark"] .nota,[data-theme="dark"] .kartu{--navy:#0B1220;--tx:#3B4558;--mut:#6B7686;--bd:#EBEDF2;--blue:#266FF2;--blue-d:#1E5ACC;--soft:#EEF4FF}
 @media (max-width:1024px){[data-theme="dark"] .sidebar{background:#10224D}}
 @media print{[data-theme="dark"] body{background:#fff}}
+
+/* Kartu Anggota: penyempurnaan */
+.k-sl{width:52px;height:52px}
+.k-school{border-left:0;padding-left:0}
+.k-head{border-bottom:3px solid #fff}
+.k-deco{top:81px;bottom:43px}
+.k-foot{height:43px;padding:0 22px;align-items:center;font-size:10.5px;letter-spacing:.1px}
+.k-foot span{gap:6px}
+
+/* Banner Galeri: tema biru */
+.gal-hero{background:linear-gradient(100deg,#1E5ACC,#266FF2 65%,#4F8DF7)}
+.gal-hero:after{background:rgba(255,255,255,.2);opacity:1}
+.gal-hero:before{background:rgba(255,255,255,.12)}
+.gal-hero .btn{background:#fff;color:#1E5ACC;border-color:transparent}
+.gal-hero .btn:hover{background:#EEF4FF;filter:none}

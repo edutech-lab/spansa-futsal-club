@@ -38,9 +38,9 @@ function Kartu({ d, logo, logoSekolah, foto, innerRef }) {
           <path d="M438 0 L466 0 L432 54 L404 54Z" fill="#266FF2" fillOpacity=".1" />
           <path d="M110 0 L124 0 L98 54 L84 54Z" fill="#1D5FE8" fillOpacity=".07" />
         </svg>
-        <span><Globe size={14} color="#266FF2" />{d.web}</span>
-        <span><Youtube size={14} color="#FF0000" />{d.youtube}</span>
-        <span><Instagram size={14} color="#E1306C" />{d.instagram}</span>
+        <span><Globe size={13} color="#266FF2" />{d.web}</span>
+        <span><Youtube size={13} color="#FF0000" />{d.youtube}</span>
+        <span><Instagram size={13} color="#E1306C" />{d.instagram}</span>
       </div>
     </div>
   );

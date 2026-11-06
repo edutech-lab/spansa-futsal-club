@@ -39,7 +39,7 @@ export function NotaSheet({ d, logo, innerRef }) {
           <div className="sg-city">{kota}, {tglID(d.tanggal)}</div>
           <div className="sg-cols">
             <div><span>Penerima,</span><i /><b>{d.penerima}</b></div>
-            <div><span>Bendahara,</span><i /><b>{d.namaBendahara || '(..................)'}</b></div>
+            {d.namaBendahara && <div><span>Bendahara,</span><i /><b>{d.namaBendahara}</b></div>}
             <div><span>Mengetahui, Pembina</span><i /><b>{d.namaPembina || '(..................)'}</b></div>
           </div>
         </div>
