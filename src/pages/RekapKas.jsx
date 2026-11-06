@@ -12,7 +12,7 @@ export default function RekapKas() {
   const exp = () => exportXlsx(`rekap_keuangan_${term.replace('/', '-').replace(' ', '_')}.xlsx`, 'Rekap Keuangan', ['Bulan', 'Iuran Anggota', 'Pemasukan Lain', 'Pengeluaran', 'Saldo'],
     [['Saldo awal', '', '', '', d.saldoAwal], ...d.rows.map((r) => [monthLabel(r.bulan), r.masuk, r.masukLain, r.keluar, r.saldo]), ['TOTAL', d.totalMasuk, d.totalMasukLain, d.totalKeluar, d.saldoAkhir]]);
   const Box = ({ icon: I, color, label, value, sub }) => (
-    <div className="card stat"><div className="ic" style={{ background: color }}><I size={22} /></div><div><div className="lb">{label}</div><div className="vl" style={{ fontSize: 22 }}>{rupiah(value)}</div>{sub && <div className="sub">{sub}</div>}</div></div>
+    <div className="card stat"><div className="ic" style={{ background: color }}><I size={22} /></div><div><div className="st-lb">{label}</div><div className="vl" style={{ fontSize: 22 }}>{rupiah(value)}</div>{sub && <div className="sub">{sub}</div>}</div></div>
   );
   return (
     <>
