@@ -14,7 +14,7 @@ function Stat({ icon: Icon, color, label, value, sub, ghost: Ghost }) {
   return (
     <div className="card stat">
       <div className="ic" style={{ background: color }}><Icon size={24} /></div>
-      <div><div className="lb">{label}</div><div className="vl">{value}</div><div className="sub">{sub}</div></div>
+      <div><div className="st-lb">{label}</div><div className="vl">{value}</div><div className="sub">{sub}</div></div>
       {Ghost && <Ghost className="ghost" size={64} />}
     </div>
   );
