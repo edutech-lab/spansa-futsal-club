@@ -31,14 +31,14 @@ function Kartu({ d, logo, logoSekolah, foto, innerRef }) {
       </div>
       <div className="k-foot">
         <svg className="k-abs" viewBox="0 0 540 54" preserveAspectRatio="none" aria-hidden="true">
-          <path d="M0 54 L0 30 Q70 8 140 28 T280 30 T420 24 T540 34 L540 54Z" fill="#EAF1FF" />
-          <path d="M0 54 L0 42 Q90 26 190 40 T380 38 T540 44 L540 54Z" fill="#D6E4FF" opacity=".8" />
-          <circle cx="506" cy="8" r="26" fill="none" stroke="#1D5FE8" strokeOpacity=".13" strokeWidth="6" />
-          <circle cx="36" cy="6" r="18" fill="#FFC20E" fillOpacity=".2" />
-          <path d="M438 0 L466 0 L432 54 L404 54Z" fill="#FFC20E" fillOpacity=".18" />
+          <path d="M0 54 L0 30 Q70 8 140 28 T280 30 T420 24 T540 34 L540 54Z" fill="#F1F6FF" />
+          <path d="M0 54 L0 42 Q90 26 190 40 T380 38 T540 44 L540 54Z" fill="#E1ECFF" opacity=".8" />
+          <circle cx="506" cy="8" r="26" fill="none" stroke="#266FF2" strokeOpacity=".13" strokeWidth="6" />
+          <circle cx="36" cy="6" r="18" fill="#266FF2" fillOpacity=".12" />
+          <path d="M438 0 L466 0 L432 54 L404 54Z" fill="#266FF2" fillOpacity=".1" />
           <path d="M110 0 L124 0 L98 54 L84 54Z" fill="#1D5FE8" fillOpacity=".07" />
         </svg>
-        <span><Globe size={14} color="#1D5FE8" />{d.web}</span>
+        <span><Globe size={14} color="#266FF2" />{d.web}</span>
         <span><Youtube size={14} color="#FF0000" />{d.youtube}</span>
         <span><Instagram size={14} color="#E1306C" />{d.instagram}</span>
       </div>
@@ -103,7 +103,7 @@ function CardView({ data }) {
         <Kartu d={full} logo={inl.logo || logoUrl} logoSekolah={inl.school || schoolUrl} foto={inl.foto || data.fotoUrl} innerRef={shot} />
       </div>
       <div className="row wrap" style={{ marginTop: 14 }}>
-        <button className="btn gold" onClick={download} disabled={busy || !inl.ready}>{busy || !inl.ready ? <Loader2 size={16} className="spin" /> : <Download size={16} />}{inl.ready ? 'Unduh Kartu (PNG)' : 'Menyiapkan gambar...'}</button>
+        <button className="btn" onClick={download} disabled={busy || !inl.ready}>{busy || !inl.ready ? <Loader2 size={16} className="spin" /> : <Download size={16} />}{inl.ready ? 'Unduh Kartu (PNG)' : 'Menyiapkan gambar...'}</button>
         <span className="hint">Foto kartu mengikuti foto profil.</span>
       </div>
     </>

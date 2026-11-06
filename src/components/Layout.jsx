@@ -7,21 +7,21 @@ import { Avatar, Field, Modal, useUi } from '../ui.jsx';
 import { fileToResizedBase64, hariTgl, termOptions } from '../utils.js';
 
 export const MENU = [
-  { path: 'dashboard', label: 'Dashboard', icon: Home, roles: ['admin', 'anggota'] },
-  { path: 'siswa', label: 'Data Siswa', icon: GraduationCap, roles: ['admin'] },
-  { path: 'anggota', label: 'Anggota Futsal', icon: Users, roles: ['admin'] },
-  { path: 'kartu', label: 'Kartu Anggota', icon: CreditCard, roles: ['admin', 'anggota'] },
-  { path: 'galeri', label: 'Galeri', icon: Images, roles: ['admin', 'anggota'] },
-  { path: 'hadir', label: 'Daftar Hadir', icon: ClipboardCheck, roles: ['admin'] },
-  { path: 'jadwal', label: 'Jadwal Pertandingan', icon: CalendarDays, roles: ['admin'] },
-  { path: 'formasi', label: 'Formasi', icon: LayoutGrid, roles: ['admin'] },
-  { path: 'nilai', label: 'Nilai', icon: Award, roles: ['admin'] },
-  { path: 'rekap-hadir', label: 'Rekap Kehadiran', icon: ClipboardCheck, roles: ['admin', 'anggota'] },
-  { path: 'rekap-iuran', label: 'Rekap Iuran', icon: Coins, roles: ['admin'] },
-  { path: 'pemasukan', label: 'Pemasukan Kas', icon: Banknote, roles: ['admin'] },
-  { path: 'pengeluaran', label: 'Pengeluaran Kas', icon: Receipt, roles: ['admin'] },
-  { path: 'rekap-kas', label: 'Rekap Keuangan', icon: PiggyBank, roles: ['admin'] },
-  { path: 'pengaturan', label: 'Pengaturan', icon: Settings, roles: ['admin'] }
+  { path: 'dashboard', label: 'Dashboard', icon: Home, roles: ['admin', 'anggota'], grp: 'Utama' },
+  { path: 'siswa', label: 'Data Siswa', icon: GraduationCap, roles: ['admin'], grp: 'Keanggotaan' },
+  { path: 'anggota', label: 'Anggota Futsal', icon: Users, roles: ['admin'], grp: 'Keanggotaan' },
+  { path: 'kartu', label: 'Kartu Anggota', icon: CreditCard, roles: ['admin', 'anggota'], grp: 'Keanggotaan' },
+  { path: 'galeri', label: 'Galeri', icon: Images, roles: ['admin', 'anggota'], grp: 'Keanggotaan' },
+  { path: 'hadir', label: 'Daftar Hadir', icon: ClipboardCheck, roles: ['admin'], grp: 'Latihan & Pertandingan' },
+  { path: 'jadwal', label: 'Jadwal Pertandingan', icon: CalendarDays, roles: ['admin'], grp: 'Latihan & Pertandingan' },
+  { path: 'formasi', label: 'Formasi', icon: LayoutGrid, roles: ['admin'], grp: 'Latihan & Pertandingan' },
+  { path: 'nilai', label: 'Nilai', icon: Award, roles: ['admin'], grp: 'Latihan & Pertandingan' },
+  { path: 'rekap-hadir', label: 'Rekap Kehadiran', icon: ClipboardCheck, roles: ['admin', 'anggota'], grp: 'Latihan & Pertandingan' },
+  { path: 'rekap-iuran', label: 'Rekap Iuran', icon: Coins, roles: ['admin'], grp: 'Keuangan' },
+  { path: 'pemasukan', label: 'Pemasukan Kas', icon: Banknote, roles: ['admin'], grp: 'Keuangan' },
+  { path: 'pengeluaran', label: 'Pengeluaran Kas', icon: Receipt, roles: ['admin'], grp: 'Keuangan' },
+  { path: 'rekap-kas', label: 'Rekap Keuangan', icon: PiggyBank, roles: ['admin'], grp: 'Keuangan' },
+  { path: 'pengaturan', label: 'Pengaturan', icon: Settings, roles: ['admin'], grp: 'Sistem' }
 ];
 
 function PasswordModal({ open, onClose }) {
@@ -61,6 +61,7 @@ export default function Layout({ route, children }) {
   const [up, setUp] = useState([]);
   const fileRef = useRef(null);
   const menu = MENU.filter((m) => m.roles.includes(user.role));
+  const groups = menu.reduce((acc, m) => { const g = acc.find((x) => x.name === m.grp); if (g) g.items.push(m); else acc.push({ name: m.grp, items: [m] }); return acc; }, []);
   const cur = MENU.find((m) => m.path === route);
 
   useEffect(() => { setOpen(false); setPop(''); window.scrollTo(0, 0); }, [route]);
@@ -96,15 +97,16 @@ export default function Layout({ route, children }) {
           <b>{settings.namaKlub || 'Spansa Futsal Club'}</b>
         </div>
         <nav className="sb-nav">
-          {menu.map((m) => (
-            <a key={m.path} href={'#/' + m.path} className={route === m.path ? 'on' : ''}><m.icon size={20} />{m.label}</a>
+          {groups.map((g, gi) => (
+            <div key={g.name} className="sb-g">
+              {gi > 0 && <div className="sb-sep" />}
+              {gi > 0 && <div className="sb-grp">{g.name}</div>}
+              {g.items.map((m) => (
+                <a key={m.path} href={'#/' + m.path} className={route === m.path ? 'on' : ''}><m.icon size={20} />{m.label}</a>
+              ))}
+            </div>
           ))}
         </nav>
-        <div className="sb-foot">
-          <svg className="sb-court" viewBox="0 0 240 90" aria-hidden="true"><g stroke="#fff" strokeWidth="2" fill="none"><circle cx="120" cy="90" r="48" /><path d="M0 60 H240" /><rect x="70" y="30" width="100" height="60" /></g></svg>
-          <div style={{ position: 'relative' }}>Play Together,<br />Achieve More</div>
-          <svg width="150" height="14" viewBox="0 0 150 14" aria-hidden="true"><path d="M0 12 L146 2 L120 12 Z" fill="#FFC20E" /></svg>
-        </div>
       </aside>
       <div className="overlay" onClick={() => setOpen(false)} />
       <div className="main">

@@ -23,7 +23,10 @@ export async function api(action, params = {}) {
       redirect: 'follow'
     });
   } catch {
-    throw new Error('Tidak dapat terhubung ke server. Periksa koneksi internet Anda.');
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      throw new Error('Tidak ada koneksi internet. Periksa jaringan Anda lalu coba lagi.');
+    }
+    throw new Error('Tidak dapat terhubung ke server. Periksa koneksi internet Anda. Jika internet normal, pastikan VITE_GAS_URL di Vercel adalah URL /exec deployment terbaru, akses Web App \"Anyone\", dan Vercel sudah di-redeploy.');
   }
   let json;
   try { json = await res.json(); } catch {

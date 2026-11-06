@@ -74,6 +74,8 @@ Aturan periode: Ganjil = Juli-Desember, Genap = Januari-Juni. Semua daftar, reka
 | Foto kartu tidak tampil di PNG | Pastikan foto bisa dibuka lewat tautannya; ganti foto profil lalu coba unduh lagi. |
 | NISN kehilangan nol di depan setelah edit manual di Excel | Isi kolom NISN dan Kelas sebagai **Text**; impor akan melengkapi nol bila NISN kurang dari 10 digit dan sel berformat angka. |
 | Error izin saat Run | Setujui ulang izin (Review permissions > Advanced > Go to project). |
+| "Tidak dapat terhubung ke server" setelah ganti versi/deployment | Pakai **Manage deployments > Edit > New version** (bukan New deployment). Pastikan akses *Anyone*, `VITE_GAS_URL` = URL `/exec` terbaru, lalu **Redeploy** di Vercel. Uji URL `/exec` di tab baru: harus tampil JSON `"API aktif"`. |
+| Layar Dasbor/Rekap Kas tertutup lapisan gelap | Sudah diperbaiki: label kartu statistik memakai kelas `st-lb` (sebelumnya bentrok dengan kelas `lb` milik lightbox Galeri). Pastikan `styles.css`, `Dashboard.jsx`, `RekapKas.jsx` terbaru ter-push dan Vercel berstatus Ready. |
 | Build Vercel gagal | Periksa log; pastikan Node 18+ dan `package.json` tidak diubah. |
 
 ## 7. Keamanan
