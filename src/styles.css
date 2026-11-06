@@ -57,7 +57,7 @@ img{max-width:100%}
 .stack{display:flex;flex-direction:column;gap:16px}
 .stat{display:flex;align-items:center;gap:14px;padding:14px 16px;position:relative;overflow:hidden}
 .stat .ic{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;color:#fff;flex:none}
-.stat .lb{font-size:13px;font-weight:600;color:var(--navy)}
+.stat .st-lb{font-size:13px;font-weight:600;color:var(--navy)}
 .stat .vl{font-size:26px;font-weight:800;color:var(--navy);line-height:1.15}
 .stat .sub{font-size:12px;color:var(--mut)}
 .stat .ghost{position:absolute;right:10px;bottom:-6px;opacity:.09;color:var(--blue)}
@@ -306,7 +306,7 @@ tfoot td{background:#F8FAFF;font-weight:800;color:var(--navy)}
   .header{padding-left:10px;padding-right:10px;gap:6px}
   .h-title{font-size:16px}.profile .pn{display:none}.term-sel{max-width:130px;font-size:12px}
   .g-stats,.g-stats.three{grid-template-columns:1fr 1fr;gap:10px}
-  .stat{padding:12px;gap:10px}.stat .ic{width:42px;height:42px}.stat .vl{font-size:20px}.stat .lb{font-size:12px}
+  .stat{padding:12px;gap:10px}.stat .ic{width:42px;height:42px}.stat .vl{font-size:20px}.stat .st-lb{font-size:12px}
   .banner .bt{padding:18px 16px;min-height:140px}.banner{border-radius:16px}.banner .bar{display:none}
   .form-grid{grid-template-columns:1fr}
   .pair{grid-template-columns:1fr}.pick-list{grid-template-columns:1fr}
