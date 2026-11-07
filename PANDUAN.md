@@ -55,11 +55,16 @@ Keamanan: setiap permintaan wajib membawa Firebase ID token yang diverifikasi; u
    Skrip memindahkan siswa, anggota, presensi, nilai, jadwal, formasi, kas, galeri, dan pengaturan, lalu membuat akun: admin (password dari `ADMIN_PASSWORD`) dan anggota aktif (password awal = NISN). Password lama tidak bisa dipindahkan. Aman dijalankan ulang.
 4. Hapus `spansa-export.json` setelah selesai (berisi data pribadi).
 
-## 5. Akun admin (bila tidak memakai migrasi)
-```
-ADMIN_PASSWORD="minimal8karakter" npm run create-admin
-```
-Opsional `ADMIN_USERNAME` (default `admin`) dan `ADMIN_NAMA`. Menjalankan ulang berarti mengganti password admin.
+## 5. Akun admin (tanpa instal apa pun di komputer)
+Setelah deploy ke Vercel (langkah 6):
+1. Di Vercel > Settings > Environment Variables, tambahkan `SETUP_KEY` berisi teks acak minimal 12 karakter (contoh: `Futsal-Spansa-2026-xyz`), lalu **Redeploy**.
+2. Buka `https://DOMAIN-ANDA/setup-admin.html`, isi Kunci setup, username (default `admin`), dan password baru (minimal 8 karakter), lalu klik **Buat Akun Admin**.
+3. Login di halaman utama dengan username dan password tadi.
+4. **Hapus variabel `SETUP_KEY` di Vercel lalu Redeploy** agar halaman setup nonaktif.
+
+Lupa password admin? Ulangi langkah 1-4 dengan username yang sama untuk mengganti passwordnya.
+
+**Jangan membuat/menghapus admin lewat Firebase Console.** Akun admin wajib memiliki Custom Claim `role=admin` dan dokumen `users/{uid}`, yang hanya dibuat oleh halaman setup (atau skrip `npm run create-admin` bagi yang memakai komputer). Akun yang dibuat manual di Console tidak bisa masuk.
 
 ## 6. Deploy GitHub → Vercel
 1. Push proyek ke GitHub (`.env*`, `node_modules`, `spansa-export.json` sudah di `.gitignore`).
@@ -68,6 +73,7 @@ Opsional `ADMIN_USERNAME` (default `admin`) dan `ADMIN_NAMA`. Menjalankan ulang 
    - `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID`
    - `VITE_DRIVE_URL` = URL `/exec` langkah 3
    - `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` (tempel apa adanya termasuk `\n`)
+   - `SETUP_KEY` (sementara, lihat langkah 5)
 4. **Deploy**. Setelah itu di Firebase **Authentication > Settings > Authorized domains**, tambahkan domain Vercel/domain sendiri.
 5. Pengembangan lokal: `npm install`, `npx vercel dev` (agar folder `/api` aktif; `npm run dev` saja tidak menjalankan `/api`).
 

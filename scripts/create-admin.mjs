@@ -22,7 +22,7 @@ const nama = process.env.ADMIN_NAMA || 'Administrator';
 
 initializeApp({ credential: cert({ projectId, clientEmail, privateKey: pk.replace(/\\n/g, '\n') }) });
 const auth = getAuth(); const db = getFirestore();
-const email = username + '@spansa.club';
+const email = (process.env.ADMIN_EMAIL || (username + '@spansa.club')).trim().toLowerCase();
 let uid;
 try { const u = await auth.getUserByEmail(email); uid = u.uid; await auth.updateUser(uid, { password, disabled: false, displayName: nama }); console.log('Akun admin sudah ada: password diperbarui.'); }
 catch (e) { if (e.code !== 'auth/user-not-found') throw e; uid = (await auth.createUser({ email, password, displayName: nama })).uid; console.log('Akun admin dibuat.'); }
@@ -30,4 +30,4 @@ await auth.setCustomUserClaims(uid, { role: 'admin' });
 await auth.revokeRefreshTokens(uid);
 const now = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Jakarta' }).replace(' ', 'T');
 await db.collection('users').doc(uid).set({ userId: uid, username, role: 'admin', nisn: '', nama, status: 'aktif', fotoUrl: '', updatedAt: now, createdAt: now }, { merge: true });
-console.log('Selesai. Login dengan username: ' + username);
+console.log('Selesai. Login dengan: ' + (process.env.ADMIN_EMAIL ? email : username));

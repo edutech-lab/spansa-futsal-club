@@ -1,5 +1,6 @@
 /* Vercel Function: operasi akun yang membutuhkan Firebase Admin SDK.
    Hanya dapat dipanggil oleh admin (ID token + Custom Claim role=admin). */
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -93,17 +94,48 @@ const ACTIONS = {
   }
 };
 
+/* Pembuatan admin pertama tanpa instal apa pun di komputer: dipanggil dari /setup-admin.html.
+   Hanya aktif bila variabel SETUP_KEY (min. 12 karakter) diisi di Vercel. HAPUS variabel itu setelah selesai. */
+async function bootstrapAdmin(p, db, auth) {
+  const key = process.env.SETUP_KEY || '';
+  if (key.length < 12) throw new Fail('Fitur setup nonaktif. Isi variabel SETUP_KEY (minimal 12 karakter) di Vercel lalu redeploy.', 'SETUP', 403);
+  const h = (v) => createHash('sha256').update(String(v)).digest();
+  if (!timingSafeEqual(h(p.setupKey || ''), h(key))) throw new Fail('Kunci setup salah', 'FORBIDDEN', 403);
+  const username = String(p.username || 'admin').trim().toLowerCase().replace(/[^a-z0-9._-]/g, '');
+  const password = String(p.password || '');
+  const nama = String(p.nama || 'Administrator').trim().slice(0, 60) || 'Administrator';
+  if (!username) throw new Fail('Username tidak valid', 'VALID');
+  if (password.length < 8) throw new Fail('Password minimal 8 karakter', 'VALID');
+  const email = emailOf(username);
+  let uid; let baru = false;
+  try {
+    uid = (await auth.getUserByEmail(email)).uid;
+    await auth.updateUser(uid, { password, disabled: false, displayName: nama });
+  } catch (e) {
+    if (!notFound(e)) throw e;
+    uid = (await auth.createUser({ email, password, displayName: nama })).uid; baru = true;
+  }
+  await auth.setCustomUserClaims(uid, { role: 'admin' });
+  await auth.revokeRefreshTokens(uid);
+  await db.collection('users').doc(uid).set({ userId: uid, username, role: 'admin', nisn: '', nama, status: 'aktif', fotoUrl: '', updatedAt: nowIso(), createdAt: nowIso() }, { merge: true });
+  return { username, baru };
+}
+
 export default async function handler(req, res) {
   const reply = (status, body) => res.status(status).json(body);
   if (req.method !== 'POST') return reply(405, { success: false, message: 'Metode tidak diizinkan', data: null });
   try {
     init();
+    const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+    if (body.action === 'bootstrapAdmin') {
+      const data = await bootstrapAdmin(body.params || {}, getFirestore(), getAuth());
+      return reply(200, { success: true, message: 'OK', data });
+    }
     const m = /^Bearer (.+)$/.exec(req.headers.authorization || '');
     if (!m) throw new Fail('Sesi tidak valid. Silakan login ulang.', 'AUTH', 401);
     let claims;
     try { claims = await getAuth().verifyIdToken(m[1], true); } catch { throw new Fail('Sesi berakhir. Silakan login ulang.', 'AUTH', 401); }
     if (claims.role !== 'admin') throw new Fail('Anda tidak memiliki akses ke fitur ini', 'FORBIDDEN', 403);
-    const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
     const fn = ACTIONS[body.action];
     if (!fn) throw new Fail('Aksi tidak dikenal', 'NOACTION');
     const data = await fn(body.params || {}, getFirestore(), getAuth());

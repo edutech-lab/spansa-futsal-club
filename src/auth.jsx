@@ -20,13 +20,18 @@ function initialTerm() {
 }
 
 function loginError(e) {
-  const c = e && e.code;
+  if (e instanceof AppError) return e;
+  const c = String((e && e.code) || '');
+  if (['auth/invalid-credential', 'auth/wrong-password', 'auth/user-not-found', 'auth/invalid-email', 'auth/missing-password'].includes(c)) return new AppError('Username atau password salah', 'AUTH');
   if (c === 'auth/user-disabled') return new AppError('Akun dinonaktifkan. Hubungi admin.', 'AUTH');
   if (c === 'auth/too-many-requests') return new AppError('Terlalu banyak percobaan gagal. Coba lagi beberapa menit lagi.', 'RATE');
   if (c === 'auth/network-request-failed') return new AppError('Tidak dapat terhubung. Periksa koneksi internet Anda.', 'NET');
   if (c === 'auth/operation-not-allowed') return new AppError('Metode Email/Password belum diaktifkan di Firebase Authentication.', 'SETUP');
-  if (e instanceof AppError) return e;
-  return new AppError('Username atau password salah', 'AUTH');
+  if (c === 'auth/invalid-api-key' || c === 'auth/api-key-not-valid.-please-pass-a-valid-api-key.') return new AppError('API key Firebase tidak valid. Periksa VITE_FIREBASE_API_KEY di Vercel, lalu redeploy.', 'SETUP');
+  if (c === 'auth/configuration-not-found') return new AppError('Firebase Authentication belum diaktifkan. Buka Build > Authentication > Get started.', 'SETUP');
+  if (c === 'auth/unauthorized-domain') return new AppError('Domain ini belum diizinkan. Tambahkan di Authentication > Settings > Authorized domains.', 'SETUP');
+  if (c === 'permission-denied') return new AppError('Akses data ditolak. Pastikan firestore.rules sudah dipublikasikan.', 'FORBIDDEN');
+  return new AppError('Gagal masuk' + (c ? ' (' + c + ')' : '') + '. Hubungi admin dengan menyertakan kode ini.', 'ERR');
 }
 
 export function AuthProvider({ children }) {
@@ -62,6 +67,7 @@ export function AuthProvider({ children }) {
   }, [loadProfile]);
 
   const login = useCallback(async (username, password, selTerm) => {
+    if (!firebaseReady) throw new AppError('Konfigurasi Firebase belum diisi. Lengkapi variabel VITE_FIREBASE_* di Vercel lalu redeploy.', 'SETUP');
     manual.current = true;
     try {
       let cred;

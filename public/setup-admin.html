@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Setup Admin - Spansa Futsal Club</title>
+<style>
+  body{font-family:system-ui,Segoe UI,Roboto,sans-serif;background:#f3f6fb;margin:0;display:flex;justify-content:center;padding:24px;color:#1b2430}
+  .card{background:#fff;max-width:420px;width:100%;border-radius:16px;box-shadow:0 6px 24px rgba(20,40,80,.12);padding:24px}
+  h1{font-size:20px;margin:0 0 6px} p.sub{margin:0 0 18px;color:#5b6675;font-size:14px;line-height:1.5}
+  label{display:block;font-size:13px;font-weight:600;margin:12px 0 4px}
+  input{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #c9d2df;border-radius:10px;font-size:15px}
+  button{margin-top:18px;width:100%;padding:12px;border:0;border-radius:10px;background:#1d4ed8;color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+  button:disabled{opacity:.6;cursor:wait}
+  #msg{margin-top:14px;font-size:14px;line-height:1.5;border-radius:10px;padding:10px 12px;display:none}
+  .ok{background:#e7f8ee;color:#166534;display:block!important}.err{background:#fdecec;color:#991b1b;display:block!important}
+  .note{margin-top:16px;font-size:12px;color:#5b6675;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Buat / Reset Akun Admin</h1>
+  <p class="sub">Halaman sekali pakai untuk membuat akun admin pertama. Setelah berhasil, hapus variabel <b>SETUP_KEY</b> di Vercel.</p>
+  <label for="key">Kunci setup (SETUP_KEY dari Vercel)</label>
+  <input id="key" type="password" autocomplete="off">
+  <label for="user">Username admin</label>
+  <input id="user" value="admin" autocomplete="off">
+  <label for="nama">Nama</label>
+  <input id="nama" value="Administrator" autocomplete="off">
+  <label for="pw">Password baru (minimal 8 karakter)</label>
+  <input id="pw" type="password" autocomplete="new-password">
+  <label for="pw2">Ulangi password</label>
+  <input id="pw2" type="password" autocomplete="new-password">
+  <button id="go">Buat Akun Admin</button>
+  <div id="msg"></div>
+  <p class="note">Menjalankan ulang dengan username yang sama akan mengganti password admin tersebut.</p>
+</div>
+<script>
+  var $ = function (id) { return document.getElementById(id); };
+  function show(t, ok) { var m = $('msg'); m.className = ok ? 'ok' : 'err'; m.textContent = t; }
+  $('go').onclick = async function () {
+    if (!$('key').value || !$('pw').value) return show('Kunci setup dan password wajib diisi.', false);
+    if ($('pw').value !== $('pw2').value) return show('Password dan pengulangannya tidak sama.', false);
+    var b = $('go'); b.disabled = true; b.textContent = 'Memproses...';
+    try {
+      var res = await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'bootstrapAdmin', params: { setupKey: $('key').value, username: $('user').value, nama: $('nama').value, password: $('pw').value } }) });
+      var j = await res.json();
+      if (!j.success) throw new Error(j.message);
+      show((j.data.baru ? 'Akun admin dibuat. ' : 'Password admin diperbarui. ') + 'Silakan login di halaman utama dengan username "' + j.data.username + '". Jangan lupa hapus SETUP_KEY di Vercel.', true);
+    } catch (e) { show(e.message || 'Gagal. Periksa variabel FIREBASE_* dan SETUP_KEY di Vercel.', false); }
+    b.disabled = false; b.textContent = 'Buat Akun Admin';
+  };
+</script>
+</body>
+</html>

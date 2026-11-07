@@ -10,7 +10,12 @@ import {
   termKey, termOf, termRange, today, validDate
 } from './util.js';
 
-export const toEmail = (username) => String(username).trim().toLowerCase().replace(/[^a-z0-9._-]/g, '') + '@' + ACCOUNT_DOMAIN;
+/* Username/NISN -> email internal. Jika yang diketik sudah berupa email, dipakai apa adanya. */
+export const toEmail = (username) => {
+  const v = String(username).trim().toLowerCase();
+  if (v.indexOf('@') > 0) return v;
+  return v.replace(/[^a-z0-9._-]/g, '') + '@' + ACCOUNT_DOMAIN;
+};
 
 /* ===================== PENGATURAN ===================== */
 async function rawSettings(ctx) {
