@@ -4,7 +4,8 @@ service cloud.firestore {
     // Peran (role) dan NISN berasal dari Custom Claims yang hanya bisa diisi server (Firebase Admin SDK).
     function signedIn() { return request.auth != null; }
     function isAdmin() { return signedIn() && request.auth.token.role == 'admin'; }
-    function myNisn() { return signedIn() && request.auth.token.role == 'anggota' ? request.auth.token.nisn : ''; }
+    function isMember() { return signedIn() && request.auth.token.role == 'anggota' && request.auth.token.nisn is string; }
+    function myNisn() { return isMember() ? request.auth.token.nisn : ''; }
     function onlyFoto() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fotoUrl']); }
 
     // Info publik untuk halaman login (nama klub, nama sekolah, logo).
@@ -32,8 +33,10 @@ service cloud.firestore {
       allow read: if isAdmin() || (myNisn() != '' && resource.data.nisn == myNisn());
       allow write: if isAdmin();
     }
+    // ID dokumen nilai berformat "<tahunAjaran>_<semester>_<nisn>". Dicek lewat ID (bukan resource.data)
+    // agar membaca dokumen yang belum ada tidak ditolak (resource bernilai null).
     match /nilai/{id} {
-      allow read: if isAdmin() || (myNisn() != '' && resource.data.nisn == myNisn());
+      allow read: if isAdmin() || (isMember() && id.matches('.*_' + request.auth.token.nisn));
       allow write: if isAdmin();
     }
 

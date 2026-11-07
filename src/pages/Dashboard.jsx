@@ -165,15 +165,17 @@ export default function Dashboard() {
               {isAdmin && (<><div className="sec-t">Kehadiran</div>{dots}</>)}
             </Card>
 
-            <Card className="wide" title="Aktivitas Terbaru" icon={Activity}>
-              {d.aktivitas.length === 0 ? <Empty text="Belum ada aktivitas" /> : d.aktivitas.map((a, i) => (
-                <div key={i} className="arow">
-                  <span className="av">{initials(a.tipe || 'A').slice(0, 2)}</span>
-                  <div><b>{a.teks}</b><small>{a.tipe}</small></div>
-                  <div className="meta"><span>{timeAgo(a.waktu)}</span><span className="stp sch">Tercatat</span></div>
-                </div>
-              ))}
-            </Card>
+            {isAdmin && (
+              <Card className="wide" title="Aktivitas Terbaru" icon={Activity}>
+                {d.aktivitas.length === 0 ? <Empty text="Belum ada aktivitas" /> : d.aktivitas.map((a, i) => (
+                  <div key={i} className="arow">
+                    <span className="av">{initials(a.tipe || 'A').slice(0, 2)}</span>
+                    <div><b>{a.teks}</b><small>{a.tipe}</small></div>
+                    <div className="meta"><span>{timeAgo(a.waktu)}</span><span className="stp sch">Tercatat</span></div>
+                  </div>
+                ))}
+              </Card>
+            )}
           </div>
 
           <div className="grid g-2e" style={{ marginTop: 14 }}>

@@ -704,7 +704,7 @@ async function dashboard(p, ctx) {
   const keh = { H: 0, S: 0, I: 0, A: 0 };
   mine.forEach((x) => { if (keh[x.status] !== undefined) keh[x.status]++; });
   const persen = ms.length ? round1(keh.H / ms.length * 100) : 0;
-  const sv = await one('nilai', termKey(p.term) + '_' + ctx.nisn);
+  const sv = await one('nilai', termKey(p.term) + '_' + ctx.nisn).catch(() => null);
   const tren = [];
   tr.months.forEach((b) => {
     const mm = ms.filter((m) => m.tanggal.slice(0, 7) === b);
@@ -713,16 +713,9 @@ async function dashboard(p, ctx) {
     const h = mine.filter((x) => mid[x.pertemuanId] && x.status === 'H').length;
     tren.push({ bulan: b, persen: round1(h / mm.length * 100) });
   });
-  const LBL = { H: 'Hadir', S: 'Sakit', I: 'Izin', A: 'Alpa' };
-  const dateOf = {};
-  ms.forEach((m) => { dateOf[m.id] = m.tanggal; });
-  const act = mine.filter((x) => dateOf[x.pertemuanId]).map((x) => ({ tipe: 'Presensi', teks: 'Latihan ' + dateOf[x.pertemuanId] + ': ' + LBL[x.status], waktu: dateOf[x.pertemuanId] + 'T00:00:00' }));
-  (await recent('jadwal')).forEach((j) => act.push({ tipe: 'Jadwal', teks: 'Jadwal vs ' + j.lawan + ' (' + j.tanggal + ')', waktu: j.createdAt }));
-  act.sort((a, b) => (a.waktu < b.waktu ? 1 : -1));
   base.stats = { persenHadir: persen, hadir: keh.H, totalPertemuan: ms.length, jadwalMendatang: up.length, nilai: sv ? { total: sv.total, predikat: sv.predikat } : null };
   base.kehadiran = keh;
   base.tren = tren;
-  base.aktivitas = act.slice(0, 6);
   return base;
 }
 
