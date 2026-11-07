@@ -1,42 +1,31 @@
-import { GAS_URL } from './config.js';
+import { ROUTES } from './backend/handlers.js';
+import { AppError } from './backend/util.js';
+import { firebaseReady } from './firebase.js';
 
-const KEY = 'sfc_token';
-let token = '';
-try { token = localStorage.getItem(KEY) || ''; } catch { token = ''; }
-let onExpired = () => {};
+/* Sesi aktif (diisi oleh auth.jsx): { uid, role, nisn, username } */
+let session = null;
+export function setSession(s) { session = s; }
+export function getSession() { return session; }
 
-export const getToken = () => token;
-export function setToken(t) {
-  token = t || '';
-  try { if (token) localStorage.setItem(KEY, token); else localStorage.removeItem(KEY); } catch { /* penyimpanan tidak tersedia */ }
+function friendly(e) {
+  if (e instanceof AppError) return e;
+  const code = e && e.code ? String(e.code) : '';
+  if (code === 'permission-denied') return new AppError('Anda tidak memiliki akses ke data ini', 'FORBIDDEN');
+  if (code === 'unavailable' || code === 'auth/network-request-failed') return new AppError('Koneksi ke server terputus. Periksa internet Anda lalu coba lagi.', 'NET');
+  if (code === 'failed-precondition' && /index/i.test(e.message || '')) return new AppError('Indeks Firestore belum dibuat. Jalankan: firebase deploy --only firestore:indexes', 'INDEX');
+  if (code === 'resource-exhausted') return new AppError('Kuota harian Firestore habis. Coba lagi besok atau tingkatkan paket Firebase.', 'QUOTA');
+  console.error(e);
+  return new AppError('Terjadi kesalahan. Silakan coba lagi.', 'SERVER');
 }
-export const setExpiredHandler = (fn) => { onExpired = fn; };
 
 export async function api(action, params = {}) {
-  if (!GAS_URL) throw new Error('VITE_GAS_URL belum diatur. Isi URL Web App Google Apps Script pada environment variable.');
-  let res;
+  const def = ROUTES[action];
+  if (!def) throw new AppError('Aksi tidak dikenal: ' + action, 'NOACTION');
+  if (!firebaseReady) throw new AppError('Konfigurasi Firebase belum diisi. Lengkapi variabel VITE_FIREBASE_* pada environment.', 'SETUP');
   try {
-    res = await fetch(GAS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action, token, params }),
-      redirect: 'follow'
-    });
-  } catch {
-    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-      throw new Error('Tidak ada koneksi internet. Periksa jaringan Anda lalu coba lagi.');
-    }
-    throw new Error('Tidak dapat terhubung ke server. Periksa koneksi internet Anda. Jika internet normal, pastikan VITE_GAS_URL di Vercel adalah URL /exec deployment terbaru, akses Web App \"Anyone\", dan Vercel sudah di-redeploy.');
-  }
-  let json;
-  try { json = await res.json(); } catch {
-    throw new Error('Respons server tidak valid. Pastikan URL Web App benar dan akses deployment diatur ke "Anyone".');
-  }
-  if (!json || json.success !== true) {
-    if (json && json.code === 'AUTH') { setToken(''); onExpired(); }
-    const err = new Error((json && json.message) || 'Permintaan gagal diproses');
-    err.code = json && json.code;
-    throw err;
-  }
-  return json.data;
+    if (def.auth === false) return await def.fn(params, null);
+    if (!session) throw new AppError('Sesi berakhir, silakan login kembali', 'AUTH');
+    if (def.admin && session.role !== 'admin') throw new AppError('Anda tidak memiliki akses ke fitur ini', 'FORBIDDEN');
+    return await def.fn(params, session);
+  } catch (e) { throw friendly(e); }
 }

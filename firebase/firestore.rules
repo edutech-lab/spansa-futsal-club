@@ -1,0 +1,51 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Peran (role) dan NISN berasal dari Custom Claims yang hanya bisa diisi server (Firebase Admin SDK).
+    function signedIn() { return request.auth != null; }
+    function isAdmin() { return signedIn() && request.auth.token.role == 'admin'; }
+    function myNisn() { return signedIn() && request.auth.token.role == 'anggota' ? request.auth.token.nisn : ''; }
+    function onlyFoto() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fotoUrl']); }
+
+    // Info publik untuk halaman login (nama klub, nama sekolah, logo).
+    match /settings/public { allow read: if true; allow write: if isAdmin(); }
+    match /settings/app { allow read: if signedIn(); allow write: if isAdmin(); }
+    match /settings/finance { allow read, write: if isAdmin(); }
+
+    match /users/{uid} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow write: if isAdmin();
+      allow update: if signedIn() && request.auth.uid == uid && onlyFoto();
+    }
+
+    match /siswa/{nisn} { allow read, write: if isAdmin(); }
+
+    match /anggota/{nisn} {
+      allow read: if isAdmin() || (myNisn() != '' && nisn == myNisn());
+      allow write: if isAdmin();
+      allow update: if myNisn() != '' && nisn == myNisn() && onlyFoto();
+    }
+
+    match /pertemuan/{id} { allow read: if signedIn(); allow write: if isAdmin(); }
+    match /pertemuanStat/{id} { allow read, write: if isAdmin(); }
+    match /presensi/{id} {
+      allow read: if isAdmin() || (myNisn() != '' && resource.data.nisn == myNisn());
+      allow write: if isAdmin();
+    }
+    match /nilai/{id} {
+      allow read: if isAdmin() || (myNisn() != '' && resource.data.nisn == myNisn());
+      allow write: if isAdmin();
+    }
+
+    match /jadwal/{id} { allow read: if signedIn(); allow write: if isAdmin(); }
+    match /formasi/{id} { allow read: if signedIn(); allow write: if isAdmin(); }
+    match /galeri/{id} { allow read: if signedIn(); allow write: if isAdmin(); }
+
+    match /pengeluaran/{id} { allow read, write: if isAdmin(); }
+    match /pemasukan/{id} { allow read, write: if isAdmin(); }
+    match /counters/{id} { allow read, write: if isAdmin(); }
+    match /logs/{id} { allow read, create: if isAdmin(); }
+
+    match /{document=**} { allow read, write: if false; }
+  }
+}

@@ -21,9 +21,7 @@ export default function Pengaturan() {
     try {
       const r = await api('saveSettings', { settings: f });
       setSettings(r);
-      if (r.saldoAwalTerkunci === undefined || String(r.saldoAwalKas) !== String(f.saldoAwalKas)) {
-        toast('Disimpan, tetapi saldo awal tidak tercatat: backend belum diperbarui. Deploy Code.gs terbaru sebagai versi baru.', 'err');
-      } else toast('Pengaturan disimpan');
+      toast('Pengaturan disimpan');
     } catch (e) { toast(e.message, 'err'); } finally { setBusy(false); }
   };
   const unlock = async () => {

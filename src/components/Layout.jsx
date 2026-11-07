@@ -3,7 +3,7 @@ import { Bell, CalendarCheck, Camera, ChevronDown, ClipboardCheck, Coins, Credit
 import { Ball, Pitch } from './icons.jsx';
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
-import { DEFAULT_LOGO, REQUIRED_API } from '../config.js';
+import { DEFAULT_LOGO } from '../config.js';
 import { Avatar, Field, Modal, useUi } from '../ui.jsx';
 import { getTheme, saveTheme } from '../theme.js';
 import { fileToResizedBase64, hariTgl, termOptions } from '../utils.js';
@@ -54,7 +54,7 @@ function PasswordModal({ open, onClose }) {
 }
 
 export default function Layout({ route, children }) {
-  const { user, setUser, settings, term, setTerm, logout, isAdmin, apiVersion } = useAuth();
+  const { user, setUser, settings, term, setTerm, logout, isAdmin } = useAuth();
   const { toast } = useUi();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -149,9 +149,6 @@ export default function Layout({ route, children }) {
           <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPhoto} />
         </header>
         <main className="content">
-          {isAdmin && apiVersion !== REQUIRED_API && (
-            <div className="warnbar" role="alert">Backend (Google Apps Script) belum diperbarui ke versi terbaru. Tempel Code.gs terbaru, lalu Deploy &gt; Manage deployments &gt; Edit &gt; Version: New version &gt; Deploy. Sebelum itu, fitur baru (saldo awal terkunci, pemasukan, nota, galeri) belum berfungsi.</div>
-          )}
           {children}
         </main>
       </div>
