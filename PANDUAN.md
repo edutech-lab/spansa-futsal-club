@@ -104,3 +104,9 @@ Hak akses (Security Rules): admin penuh; anggota hanya membaca data dirinya (ang
 - **Foto tidak tampil:** layanan Drive menyimpan tautan halaman (`/file/d/ID/view`) yang tidak bisa dipakai sebagai gambar. Aplikasi kini mengubahnya menjadi URL gambar langsung saat ditampilkan (foto lama ikut tampil, tanpa unggah ulang).
 - **Anggota tidak bisa login / tambah anggota kadang gagal:** akun dibuat satu per satu dalam satu permintaan sehingga sering kena batas waktu Vercel saat banyak anggota dipilih, menyisakan anggota tanpa akun. Kini diproses per 5 NISN paralel dengan satu kali percobaan ulang, pesan error menyebut siswa dan alasannya, dan ada tombol Perbaiki Akun Login. Reset password juga membuat akun yang hilang.
 - NISN yang bukan 6–20 digit angka tidak bisa dibuatkan akun; perbaiki NISN-nya di Data Siswa.
+
+## Pembaruan v6
+- **Reset password massal:** menu Anggota Futsal → centang anggota → *Reset Password Terpilih*, atau *Reset Semua*. Password kembali ke NISN, akun yang belum ada dibuat, claims yang hilang diperbaiki, dan sesi lama keluar. Dikerjakan per 5 anggota agar tidak kena batas waktu Vercel.
+- **Login NISN tanpa angka 0 di depan:** jika NISN 10 digit diketik tanpa 0 di depan (mis. dari Excel), aplikasi otomatis mencoba versi 10 digit.
+- **Potong foto:** unggah foto (profil sendiri maupun foto anggota oleh admin) membuka dialog potong dengan rasio 4:5 sesuai foto di Kartu Anggota (geser + zoom).
+- **Daftar teman anggota:** daftar kini disinkronkan otomatis setiap admin login. Jika anggota melihat pesan "aturan Firestore belum dipublikasikan", jalankan `firebase deploy --only firestore:rules`.

@@ -6,7 +6,8 @@ import { useAuth } from '../auth.jsx';
 import { DEFAULT_LOGO } from '../config.js';
 import { Avatar, Field, Modal, useUi } from '../ui.jsx';
 import { getTheme, saveTheme } from '../theme.js';
-import { fileToResizedBase64, hariTgl, termOptions } from '../utils.js';
+import PhotoCropper from './PhotoCropper.jsx';
+import { hariTgl, termOptions } from '../utils.js';
 
 export const MENU = [
   { path: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'anggota'], grp: 'Utama' },
@@ -76,17 +77,19 @@ export default function Layout({ route, children }) {
     return () => document.removeEventListener('mousedown', close);
   }, []);
 
-  const onPhoto = async (e) => {
+  const [cropFile, setCropFile] = useState(null);
+  const onPick = (e) => {
     const file = e.target.files && e.target.files[0];
     e.target.value = '';
     if (!file) return;
-    try {
-      toast('Mengunggah foto...', 'load');
-      const img = await fileToResizedBase64(file);
-      const d = await api('updatePhoto', img);
-      setUser({ ...user, fotoUrl: d.fotoUrl });
-      toast('Foto profil diperbarui');
-    } catch (err) { toast(err.message, 'err'); }
+    if (!/^image\//.test(file.type)) return toast('Berkas harus berupa gambar', 'err');
+    setCropFile(file);
+  };
+  const uploadPhoto = async (img) => {
+    const d = await api('updatePhoto', img);
+    setUser({ ...user, fotoUrl: d.fotoUrl });
+    setCropFile(null);
+    toast('Foto profil diperbarui');
   };
 
   const bottom = isAdmin
@@ -146,7 +149,7 @@ export default function Layout({ route, children }) {
               </div>
             )}
           </div>
-          <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPhoto} />
+          <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPick} />
         </header>
         <main className="content">
           {children}
@@ -158,6 +161,7 @@ export default function Layout({ route, children }) {
         <button onClick={() => setOpen(true)}><Menu size={21} />Menu</button>
       </nav>
       <PasswordModal open={pw} onClose={() => setPw(false)} />
+      <PhotoCropper file={cropFile} onCancel={() => setCropFile(null)} onDone={uploadPhoto} />
     </div>
   );
 }

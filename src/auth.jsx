@@ -55,6 +55,8 @@ export function AuthProvider({ children }) {
     setSession({ uid: fb.uid, role: claims.role, nisn: claims.nisn || '', username: d.user.username });
     setSettings(d.settings);
     setUser(d.user);
+    // Admin: pastikan daftar anggota untuk tampilan anggota selalu mutakhir (tanpa menunggu admin membuka menu).
+    if (claims.role === 'admin') api('syncRoster').catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -71,7 +73,14 @@ export function AuthProvider({ children }) {
     manual.current = true;
     try {
       let cred;
-      try { cred = await signInWithEmailAndPassword(auth, toEmail(username), password); } catch (e) { throw loginError(e); }
+      try { cred = await signInWithEmailAndPassword(auth, toEmail(username), password); } catch (e) {
+        // NISN 10 digit sering kehilangan angka 0 di depan (mis. dari Excel / diketik tanpa 0): coba versi 10 digit.
+        const u = String(username).trim();
+        const wrong = ['auth/invalid-credential', 'auth/user-not-found', 'auth/wrong-password'].includes(e && e.code);
+        if (!(wrong && /^\d{6,9}$/.test(u))) throw loginError(e);
+        const full = u.padStart(10, '0');
+        try { cred = await signInWithEmailAndPassword(auth, toEmail(full), password === u ? full : password); } catch { throw loginError(e); }
+      }
       try { await loadProfile(cred.user); } catch (e) { await signOut(auth).catch(() => {}); setSession(null); throw loginError(e); }
       setTerm(selTerm);
     } finally { manual.current = false; }

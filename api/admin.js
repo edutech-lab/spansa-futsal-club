@@ -80,6 +80,14 @@ async function ensureOne(n, db, auth) {
   return hasil;
 }
 
+/* Kembalikan password satu anggota ke NISN (membuat akun bila belum ada, memperbaiki claims) dan keluarkan sesi lamanya. */
+async function resetOne(n, db, auth) {
+  await ensureOne(n, db, auth);
+  const u = await auth.getUserByEmail(emailOf(n));
+  await auth.updateUser(u.uid, { password: n, disabled: false });
+  await auth.revokeRefreshTokens(u.uid);
+}
+
 const ACTIONS = {
   /* Diproses 5 NISN paralel agar muat dalam batas waktu Vercel Function; satu NISN bermasalah tidak menggagalkan yang lain. */
   async ensureAccounts(p, db, auth) {
@@ -125,11 +133,25 @@ const ACTIONS = {
   async resetPassword(p, db, auth) {
     const n = String(p.nisn || '');
     if (!/^\d{6,20}$/.test(n)) throw new Fail('NISN tidak valid', 'VALID');
-    await ensureOne(n, db, auth); // membuat akun bila belum ada, memperbaiki claims bila hilang
-    const u = await auth.getUserByEmail(emailOf(n));
-    await auth.updateUser(u.uid, { password: n, disabled: false });
-    await auth.revokeRefreshTokens(u.uid);
+    await resetOne(n, db, auth);
     return { ok: true };
+  },
+
+  /* Reset beberapa/semua anggota: 5 NISN paralel per gelombang; yang gagal dilaporkan tanpa menghentikan yang lain. */
+  async resetPasswords(p, db, auth) {
+    const nisns = (Array.isArray(p.nisns) ? p.nisns : []).map((x) => String(x).trim());
+    if (!nisns.length || nisns.length > 100) throw new Fail('Daftar NISN tidak valid (1-100 per permintaan)', 'VALID');
+    let ok = 0; const gagal = [];
+    for (let i = 0; i < nisns.length; i += 5) {
+      const res = await Promise.all(nisns.slice(i, i + 5).map(async (n) => {
+        try { await resetOne(n, db, auth); return { n }; } catch (e) {
+          console.error('resetPasswords gagal untuk', n, e && e.code, e && e.message);
+          return { n, err: e instanceof Fail ? e.message : explain(e) };
+        }
+      }));
+      res.forEach((x) => { if (x.err) gagal.push({ nisn: x.n, alasan: x.err }); else ok++; });
+    }
+    return { ok, gagal };
   }
 };
 

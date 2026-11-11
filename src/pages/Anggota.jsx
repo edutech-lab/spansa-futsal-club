@@ -3,7 +3,8 @@ import { Camera, Check, Download, KeyRound, Loader2, Pencil, Plus, Search, Shiel
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { Avatar, Card, DataTable, Empty, ErrorBox, Field, Loading, Modal, PageHead, SearchBox, useLoad, useUi } from '../ui.jsx';
-import { exportXlsx, fileToResizedBase64, tglID } from '../utils.js';
+import PhotoCropper from '../components/PhotoCropper.jsx';
+import { exportXlsx, tglID } from '../utils.js';
 
 export default function Anggota() {
   const { isAdmin } = useAuth();
@@ -42,7 +43,9 @@ function AnggotaAdmin() {
   const fileRef = useRef(null);
   const photoFor = useRef(null);
   const [fixing, setFixing] = useState(false);
-  const [photoBusy, setPhotoBusy] = useState('');
+  const [cropFile, setCropFile] = useState(null);
+  const [sel, setSel] = useState({});
+  const [bulk, setBulk] = useState('');
   const { data, loading, error, reload } = useLoad(() => api('listAnggota'), []);
   const [q, setQ] = useState('');
   const [add, setAdd] = useState(false);
@@ -59,18 +62,38 @@ function AnggotaAdmin() {
     try { await api('resetPassword', { nisn: a.nisn }); toast('Password dikembalikan ke NISN'); } catch (e) { toast(e.message, 'err'); }
   };
   const pickPhoto = (a) => { photoFor.current = a; fileRef.current.click(); };
-  const onPhoto = async (e) => {
+  const onPhoto = (e) => {
     const file = e.target.files && e.target.files[0];
     e.target.value = '';
+    if (!file) return;
+    if (!/^image\//.test(file.type)) return toast('Berkas harus berupa gambar', 'err');
+    setCropFile(file);
+  };
+  const uploadPhoto = async (img) => {
     const a = photoFor.current;
-    if (!file || !a) return;
-    setPhotoBusy(a.nisn);
+    if (!a) throw new Error('Anggota tidak dipilih');
+    await api('updateAnggotaPhoto', { nisn: a.nisn, ...img });
+    setCropFile(null);
+    toast('Foto ' + a.nama + ' diperbarui');
+    reload();
+  };
+  const selected = (data || []).map((a) => a.nisn).filter((n) => sel[n]);
+  const allSel = rows.length > 0 && rows.every((r) => sel[r.nisn]);
+  const toggleAll = () => { const next = { ...sel }; rows.forEach((r) => { next[r.nisn] = !allSel; }); setSel(next); };
+  const runReset = async (all) => {
+    const list = all ? (data || []).map((a) => a.nisn) : selected;
+    if (!list.length) return;
+    const msg = all
+      ? `Reset password SEMUA ${list.length} anggota aktif menjadi NISN masing-masing? Anggota yang pernah mengganti password harus masuk dengan NISN lagi, dan sesi login mereka akan keluar.`
+      : `Reset password ${list.length} anggota terpilih menjadi NISN? Sesi login mereka akan keluar.`;
+    if (!(await confirm(msg, { danger: all, okText: 'Reset password' }))) return;
+    setBulk('0/' + list.length);
     try {
-      const img = await fileToResizedBase64(file);
-      await api('updateAnggotaPhoto', { nisn: a.nisn, ...img });
-      toast('Foto ' + a.nama + ' diperbarui');
-      reload();
-    } catch (err) { toast(err.message, 'err'); } finally { setPhotoBusy(''); }
+      const r = await api('resetPasswords', { nisns: list, onProgress: (d, t) => setBulk(d + '/' + t) });
+      if (r.gagal.length) toast(`${r.ok} dari ${r.total} berhasil. Gagal: ` + r.gagal.slice(0, 2).map((g) => g.nama + ' - ' + g.alasan).join(' | '), 'err');
+      else toast(`Password ${r.ok} anggota dikembalikan ke NISN`);
+      setSel({});
+    } catch (e) { toast(e.message, 'err'); } finally { setBulk(''); }
   };
   const fixAccounts = async () => {
     if (!(await confirm('Periksa dan perbaiki akun login SEMUA anggota aktif? Akun yang belum ada akan dibuat (password awal = NISN). Password yang sudah diganti anggota tidak berubah.'))) return;
@@ -93,15 +116,21 @@ function AnggotaAdmin() {
         <button className="btn" onClick={() => setAdd(true)}><UserPlus size={16} />Tambah Anggota</button>
       </PageHead>
       <Card plain>
-        <div className="toolbar"><SearchBox value={q} onChange={setQ} placeholder="Cari nama, NISN, atau kelas" /><span className="hint">{rows.length} anggota</span></div>
+        <div className="toolbar"><SearchBox value={q} onChange={setQ} placeholder="Cari nama, NISN, atau kelas" /><span className="hint">{rows.length} anggota{selected.length ? ` · ${selected.length} dipilih` : ''}</span>
+          <div className="row wrap" style={{ marginLeft: 'auto', gap: 8 }}>
+            {selected.length > 0 && <button className="btn sec sm" onClick={() => setSel({})} disabled={!!bulk}>Kosongkan pilihan</button>}
+            <button className="btn sec sm" onClick={() => runReset(false)} disabled={!!bulk || !selected.length}><KeyRound size={14} />{bulk ? `Mereset ${bulk}...` : `Reset Password Terpilih${selected.length ? ` (${selected.length})` : ''}`}</button>
+            <button className="btn sec sm" onClick={() => runReset(true)} disabled={!!bulk || !(data || []).length}><KeyRound size={14} />Reset Semua</button>
+          </div></div>
         {loading ? <Loading /> : error ? <ErrorBox message={error} onRetry={reload} /> : (
           <DataTable rows={rows} rowKey={(r) => r.nisn} empty="Belum ada anggota futsal" columns={[
+            { key: 'sel', label: <input type="checkbox" aria-label="Pilih semua anggota" checked={allSel} onChange={toggleAll} />, width: 36, render: (r) => <input type="checkbox" aria-label={'Pilih ' + r.nama} checked={!!sel[r.nisn]} onChange={() => setSel({ ...sel, [r.nisn]: !sel[r.nisn] })} /> },
             { label: 'No', render: (r, i) => i + 1, width: 50 },
             { label: 'Nama', render: (r) => <span className="row"><Avatar src={r.fotoUrl} name={r.nama} size={32} />{r.nama}</span> },
             { label: 'NISN', key: 'nisn', nowrap: true }, { label: 'JK', key: 'jk', align: 'center' }, { label: 'Kelas', key: 'kelas' },
             { label: 'Bergabung', render: (r) => tglID(r.tglBergabung, true), nowrap: true },
             { label: 'Aksi', align: 'right', render: (r) => (<div className="row" style={{ justifyContent: 'flex-end', gap: 6 }}>
-              <button className="btn sec sm icon" aria-label="Ganti foto" title="Unggah foto anggota" disabled={photoBusy === r.nisn} onClick={() => pickPhoto(r)}>{photoBusy === r.nisn ? <Loader2 size={14} className="spin" /> : <Camera size={14} />}</button>
+              <button className="btn sec sm icon" aria-label="Ganti foto" title="Unggah foto anggota" onClick={() => pickPhoto(r)}><Camera size={14} /></button>
               <button className="btn sec sm icon" aria-label="Ubah tanggal bergabung" onClick={() => setEdit({ nisn: r.nisn, nama: r.nama, tglBergabung: r.tglBergabung })}><Pencil size={14} /></button>
               <button className="btn sec sm icon" aria-label="Reset password" onClick={() => reset(r)}><KeyRound size={14} /></button>
               <button className="btn sec sm icon" aria-label="Keluarkan" onClick={() => remove(r)}><Trash2 size={14} color="#EF4444" /></button></div>) }
@@ -109,6 +138,7 @@ function AnggotaAdmin() {
         )}
       </Card>
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPhoto} />
+      <PhotoCropper file={cropFile} onCancel={() => setCropFile(null)} onDone={uploadPhoto} />
       <AddModal open={add} onClose={() => setAdd(false)} onDone={reload} />
       <Modal open={!!edit} onClose={() => setEdit(null)} title="Ubah Tanggal Bergabung" footer={<><button className="btn sec" onClick={() => setEdit(null)}>Batal</button><button className="btn" onClick={async () => {
         try { await api('updateAnggota', { nisn: edit.nisn, tglBergabung: edit.tglBergabung }); toast('Tersimpan'); setEdit(null); reload(); } catch (e) { toast(e.message, 'err'); }

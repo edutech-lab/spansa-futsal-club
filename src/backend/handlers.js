@@ -246,9 +246,35 @@ async function syncRoster() {
 const syncRosterQuiet = () => syncRoster().catch((e) => console.error('syncRoster', e));
 
 async function listRoster() {
-  return (await many('roster', where('status', '==', 'aktif')))
+  let rows;
+  try { rows = await many('roster', where('status', '==', 'aktif')); } catch (e) {
+    if (e && e.code === 'permission-denied') throw new AppError('Daftar anggota belum bisa dibuka karena aturan Firestore terbaru belum dipublikasikan. Hubungi admin (jalankan: firebase deploy --only firestore:rules).', 'FORBIDDEN');
+    throw e;
+  }
+  return rows
     .map((r) => ({ rid: r.rid, nama: r.nama, jk: r.jk || '', kelas: r.kelas || '', tglBergabung: r.tglBergabung || '', fotoUrl: r.fotoUrl || '' }))
     .sort(byNama);
+}
+
+/* Reset password beberapa/semua anggota ke NISN. p.nisns atau p.all; p.onProgress(selesai, total) opsional. */
+async function resetPasswords(p, ctx) {
+  const members = await activeMembers();
+  const nm = mapBy(members, 'nisn');
+  const nisns = p.all ? members.map((m) => m.nisn) : (Array.isArray(p.nisns) ? p.nisns.map(String).filter((n) => nm[n]) : []);
+  if (!nisns.length) throw new AppError('Pilih minimal satu anggota aktif', 'VALID');
+  let ok = 0; const gagal = [];
+  for (let i = 0; i < nisns.length; i += 5) {
+    const part = nisns.slice(i, i + 5);
+    let res = null; let lastErr = null;
+    for (let t = 0; t < 2 && !res; t++) {
+      try { res = await adminApi('resetPasswords', { nisns: part }); } catch (e) { lastErr = e; }
+    }
+    if (!res) part.forEach((n) => gagal.push({ nisn: n, alasan: (lastErr && lastErr.message) || 'Server akun tidak merespons' }));
+    else { ok += res.ok; (res.gagal || []).forEach((g) => gagal.push(g)); }
+    if (typeof p.onProgress === 'function') p.onProgress(Math.min(nisns.length, i + 5), nisns.length);
+  }
+  await writeLog(ctx, 'resetPasswords', ok + ' berhasil, ' + gagal.length + ' gagal');
+  return { total: nisns.length, ok, gagal: gagal.map((g) => ({ nisn: g.nisn, nama: (nm[g.nisn] && nm[g.nisn].nama) || g.nisn, alasan: g.alasan })) };
 }
 
 /* Membuat/mengaktifkan akun login per 5 NISN dengan 1x percobaan ulang. Mengembalikan daftar yang gagal. */
@@ -826,6 +852,8 @@ export const ROUTES = {
   removeAnggota: { fn: removeAnggota, admin: true },
   resetPassword: { fn: resetPassword, admin: true },
   syncAccounts: { fn: syncAccounts, admin: true },
+  resetPasswords: { fn: resetPasswords, admin: true },
+  syncRoster: { fn: async () => { await syncRoster(); return { ok: true }; }, admin: true },
   updateAnggotaPhoto: { fn: updateAnggotaPhoto, admin: true },
   listPertemuan: { fn: listPertemuan, admin: true },
   getPresensi: { fn: getPresensi, admin: true },
