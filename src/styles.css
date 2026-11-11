@@ -661,3 +661,11 @@ tfoot td{background:#F5F8FD}
 .crop-ph{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:16px;color:#fff;font-size:13px}
 .crop-zoom{display:flex;align-items:center;gap:10px;width:100%;max-width:300px}
 .crop-zoom input{flex:1;accent-color:var(--blue)}
+
+
+/* ===== Filter kelas & pilihan tampilan (Anggota Futsal) ===== */
+.kelas-sel{width:auto;min-width:170px;max-width:240px}
+.vtoggle{display:inline-flex;margin-left:auto;padding:3px;border:1px solid var(--bd);border-radius:12px;background:var(--card);gap:2px}
+.vtoggle button{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:0;border-radius:9px;background:transparent;color:var(--mut);font-size:13px;font-weight:600;cursor:pointer}
+.vtoggle button.on{background:var(--blue);color:#fff}
+@media (max-width:768px){.kelas-sel{flex:1;min-width:0;max-width:none}.vtoggle{margin-left:0}}

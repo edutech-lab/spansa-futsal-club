@@ -1,10 +1,38 @@
 import { useMemo, useRef, useState } from 'react';
-import { Camera, Check, Download, KeyRound, Loader2, Pencil, Plus, Search, ShieldCheck, Trash2, UserPlus } from 'lucide-react';
+import { Camera, Check, Download, KeyRound, LayoutGrid, List, Loader2, Pencil, Plus, Search, ShieldCheck, Trash2, UserPlus } from 'lucide-react';
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { Avatar, Card, DataTable, Empty, ErrorBox, Field, Loading, Modal, PageHead, SearchBox, useLoad, useUi } from '../ui.jsx';
 import PhotoCropper from '../components/PhotoCropper.jsx';
 import { exportXlsx, tglID } from '../utils.js';
+
+const byKelas = (a, b) => String(a).localeCompare(String(b), 'id', { numeric: true });
+/* Filter kelas: nilai '' = semua, 't:7' = semua kelas tingkat 7, atau kelas persis (mis. '7-07'). */
+const matchKelas = (a, f) => !f || (f.startsWith('t:') ? String(a.kelas || '').split('-')[0] === f.slice(2) : a.kelas === f);
+
+function KelasSelect({ list, value, onChange }) {
+  const groups = useMemo(() => {
+    const cnt = {};
+    list.forEach((a) => { if (a.kelas) cnt[a.kelas] = (cnt[a.kelas] || 0) + 1; });
+    const byT = {};
+    Object.keys(cnt).sort(byKelas).forEach((k) => { const t = String(k).split('-')[0]; (byT[t] = byT[t] || []).push(k); });
+    return Object.keys(byT).sort(byKelas).map((t) => ({ t, total: byT[t].reduce((n, k) => n + cnt[k], 0), kelas: byT[t].map((k) => [k, cnt[k]]) }));
+  }, [list]);
+  return (
+    <select className="input kelas-sel" value={value} onChange={(e) => onChange(e.target.value)} aria-label="Filter kelas">
+      <option value="">Semua kelas ({list.length})</option>
+      {groups.map((g) => (
+        <optgroup key={g.t} label={'Kelas ' + g.t}>
+          <option value={'t:' + g.t}>Semua kelas {g.t} ({g.total})</option>
+          {g.kelas.map(([k, n]) => <option key={k} value={k}>{k} ({n})</option>)}
+        </optgroup>
+      ))}
+    </select>
+  );
+}
+
+const VIEW_KEY = 'sfc_anggota_view';
+const jkText = (jk) => (jk === 'L' ? 'Laki-laki' : jk === 'P' ? 'Perempuan' : '-');
 
 export default function Anggota() {
   const { isAdmin } = useAuth();
@@ -15,23 +43,42 @@ export default function Anggota() {
 function AnggotaView() {
   const { data, loading, error, reload } = useLoad(() => api('listRoster'), []);
   const [q, setQ] = useState('');
-  const rows = useMemo(() => (data || []).filter((a) => !q || (a.nama + ' ' + a.kelas).toLowerCase().includes(q.toLowerCase())), [data, q]);
+  const [kelas, setKelas] = useState('');
+  const [mode, setMode] = useState(() => { try { return localStorage.getItem(VIEW_KEY) === 'list' ? 'list' : 'grid'; } catch { return 'grid'; } });
+  const changeMode = (m) => { setMode(m); try { localStorage.setItem(VIEW_KEY, m); } catch { /* abaikan */ } };
+  const rows = useMemo(() => (data || []).filter((a) => matchKelas(a, kelas) && (!q || (a.nama + ' ' + a.kelas).toLowerCase().includes(q.toLowerCase()))), [data, q, kelas]);
   return (
     <>
       <PageHead title="Anggota Futsal" subtitle="Daftar anggota klub (hanya lihat)" />
       <Card plain>
-        <div className="toolbar"><SearchBox value={q} onChange={setQ} placeholder="Cari nama atau kelas" /><span className="hint">{rows.length} anggota</span></div>
-        {loading ? <Loading /> : error ? <ErrorBox message={error} onRetry={reload} /> : rows.length === 0 ? <Empty text={q ? 'Anggota tidak ditemukan' : 'Belum ada data anggota. Admin perlu membuka menu Anggota Futsal sekali untuk menyiapkan daftar.'} /> : (
+        <div className="toolbar">
+          <SearchBox value={q} onChange={setQ} placeholder="Cari nama atau kelas" />
+          <KelasSelect list={data || []} value={kelas} onChange={setKelas} />
+          <span className="hint">{rows.length} anggota</span>
+          <div className="vtoggle" role="group" aria-label="Pilih tampilan">
+            <button type="button" className={mode === 'grid' ? 'on' : ''} aria-pressed={mode === 'grid'} onClick={() => changeMode('grid')}><LayoutGrid size={16} />Grid</button>
+            <button type="button" className={mode === 'list' ? 'on' : ''} aria-pressed={mode === 'list'} onClick={() => changeMode('list')}><List size={16} />List</button>
+          </div>
+        </div>
+        {loading ? <Loading /> : error ? <ErrorBox message={error} onRetry={reload} /> : rows.length === 0 ? <Empty text={q || kelas ? 'Anggota tidak ditemukan' : 'Belum ada data anggota. Admin perlu membuka menu Anggota Futsal sekali untuk menyiapkan daftar.'} /> : mode === 'grid' ? (
           <div className="roster">
             {rows.map((a) => (
               <div key={a.rid} className="rcard">
                 <Avatar src={a.fotoUrl} name={a.nama} size={64} />
                 <b>{a.nama}</b>
                 <span className="chip">Kelas {a.kelas || '-'}</span>
-                <small>{a.jk === 'L' ? 'Laki-laki' : a.jk === 'P' ? 'Perempuan' : '-'}{a.tglBergabung ? ' · Bergabung ' + tglID(a.tglBergabung, true) : ''}</small>
+                <small>{jkText(a.jk)}{a.tglBergabung ? ' · Bergabung ' + tglID(a.tglBergabung, true) : ''}</small>
               </div>
             ))}
           </div>
+        ) : (
+          <DataTable rows={rows} rowKey={(r) => r.rid} empty="Anggota tidak ditemukan" columns={[
+            { label: 'No', render: (r, i) => i + 1, width: 50 },
+            { label: 'Nama', render: (r) => <span className="row"><Avatar src={r.fotoUrl} name={r.nama} size={32} />{r.nama}</span> },
+            { label: 'Kelas', render: (r) => <span className="chip">{r.kelas || '-'}</span>, nowrap: true },
+            { label: 'JK', render: (r) => jkText(r.jk), nowrap: true },
+            { label: 'Bergabung', render: (r) => (r.tglBergabung ? tglID(r.tglBergabung, true) : '-'), nowrap: true }
+          ]} />
         )}
       </Card>
     </>
@@ -43,6 +90,7 @@ function AnggotaAdmin() {
   const fileRef = useRef(null);
   const photoFor = useRef(null);
   const [fixing, setFixing] = useState(false);
+  const [kelas, setKelas] = useState('');
   const [cropFile, setCropFile] = useState(null);
   const [sel, setSel] = useState({});
   const [bulk, setBulk] = useState('');
@@ -51,7 +99,7 @@ function AnggotaAdmin() {
   const [add, setAdd] = useState(false);
   const [edit, setEdit] = useState(null);
 
-  const rows = useMemo(() => (data || []).filter((a) => !q || (a.nama + ' ' + a.nisn + ' ' + a.kelas).toLowerCase().includes(q.toLowerCase())), [data, q]);
+  const rows = useMemo(() => (data || []).filter((a) => matchKelas(a, kelas) && (!q || (a.nama + ' ' + a.nisn + ' ' + a.kelas).toLowerCase().includes(q.toLowerCase()))), [data, q, kelas]);
 
   const remove = async (a) => {
     if (!(await confirm(`Keluarkan ${a.nama} dari anggota futsal? Riwayat presensi tetap tersimpan.`, { danger: true, okText: 'Keluarkan' }))) return;
@@ -116,14 +164,14 @@ function AnggotaAdmin() {
         <button className="btn" onClick={() => setAdd(true)}><UserPlus size={16} />Tambah Anggota</button>
       </PageHead>
       <Card plain>
-        <div className="toolbar"><SearchBox value={q} onChange={setQ} placeholder="Cari nama, NISN, atau kelas" /><span className="hint">{rows.length} anggota{selected.length ? ` · ${selected.length} dipilih` : ''}</span>
+        <div className="toolbar"><SearchBox value={q} onChange={setQ} placeholder="Cari nama, NISN, atau kelas" /><KelasSelect list={data || []} value={kelas} onChange={setKelas} /><span className="hint">{rows.length} anggota{selected.length ? ` · ${selected.length} dipilih` : ''}</span>
           <div className="row wrap" style={{ marginLeft: 'auto', gap: 8 }}>
             {selected.length > 0 && <button className="btn sec sm" onClick={() => setSel({})} disabled={!!bulk}>Kosongkan pilihan</button>}
             <button className="btn sec sm" onClick={() => runReset(false)} disabled={!!bulk || !selected.length}><KeyRound size={14} />{bulk ? `Mereset ${bulk}...` : `Reset Password Terpilih${selected.length ? ` (${selected.length})` : ''}`}</button>
             <button className="btn sec sm" onClick={() => runReset(true)} disabled={!!bulk || !(data || []).length}><KeyRound size={14} />Reset Semua</button>
           </div></div>
         {loading ? <Loading /> : error ? <ErrorBox message={error} onRetry={reload} /> : (
-          <DataTable rows={rows} rowKey={(r) => r.nisn} empty="Belum ada anggota futsal" columns={[
+          <DataTable rows={rows} rowKey={(r) => r.nisn} empty={q || kelas ? 'Anggota tidak ditemukan' : 'Belum ada anggota futsal'} columns={[
             { key: 'sel', label: <input type="checkbox" aria-label="Pilih semua anggota" checked={allSel} onChange={toggleAll} />, width: 36, render: (r) => <input type="checkbox" aria-label={'Pilih ' + r.nama} checked={!!sel[r.nisn]} onChange={() => setSel({ ...sel, [r.nisn]: !sel[r.nisn] })} /> },
             { label: 'No', render: (r, i) => i + 1, width: 50 },
             { label: 'Nama', render: (r) => <span className="row"><Avatar src={r.fotoUrl} name={r.nama} size={32} />{r.nama}</span> },

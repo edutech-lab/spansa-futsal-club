@@ -110,3 +110,7 @@ Hak akses (Security Rules): admin penuh; anggota hanya membaca data dirinya (ang
 - **Login NISN tanpa angka 0 di depan:** jika NISN 10 digit diketik tanpa 0 di depan (mis. dari Excel), aplikasi otomatis mencoba versi 10 digit.
 - **Potong foto:** unggah foto (profil sendiri maupun foto anggota oleh admin) membuka dialog potong dengan rasio 4:5 sesuai foto di Kartu Anggota (geser + zoom).
 - **Daftar teman anggota:** daftar kini disinkronkan otomatis setiap admin login. Jika anggota melihat pesan "aturan Firestore belum dipublikasikan", jalankan `firebase deploy --only firestore:rules`.
+
+## Pembaruan v7
+- **Filter kelas** di menu Anggota Futsal (admin dan anggota): pilih semua kelas, satu tingkat (mis. semua kelas 7), atau satu kelas. Jumlah anggota tampil di tiap pilihan. Untuk admin, ekspor dan "pilih semua" mengikuti hasil filter, sehingga bisa memilih satu kelas lalu reset password sekaligus.
+- **Tampilan anggota:** tombol Grid / List; pilihan diingat di perangkat masing-masing.
