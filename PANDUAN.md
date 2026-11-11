@@ -119,3 +119,12 @@ Hak akses (Security Rules): admin penuh; anggota hanya membaca data dirinya (ang
 - Ikon saat aplikasi dipasang (Add to Home Screen) kini memakai logo Spansa Futsal Club: lingkaran putih di atas latar biru, kotak bersudut membulat. File: `public/icon-192.png`, `icon-512.png`, `icon-maskable-192.png`, `icon-maskable-512.png`, `apple-touch-icon.png`, `favicon-64.png`.
 - Ikon lama tersimpan di cache perangkat. Agar berganti, **hapus aplikasi yang sudah terpasang lalu pasang ulang** (di Android kadang butuh beberapa menit; di iPhone hapus ikon lalu "Tambah ke Layar Utama" lagi).
 - Untuk hasil paling tajam, ikon bisa dibuat ulang dari file logo asli beresolusi tinggi (PNG transparan, minimal 512 px).
+
+## Pembaruan v9 — ikon lebih jelas
+- Lingkaran putih pada ikon dihapus. Logo Spansa kini sebesar lingkaran putih sebelumnya dan diberi list putih di sekeliling tepinya, di atas latar biru bersudut membulat.
+- Ikon versi maskable (Android) dan apple-touch-icon dibuat dengan logo sedikit lebih kecil agar tidak terpotong oleh bentuk ikon bulat/squircle di HP.
+- Hapus aplikasi yang sudah terpasang lalu pasang ulang agar ikon baru tampil.
+
+## Pembaruan v10 — logo ikon diperbesar
+- Logo pada semua ikon aplikasi diperbesar menjadi 110% dari ukuran sebelumnya (list putih tetap). Versi maskable Android diuji tetap berada di dalam zona aman sehingga tidak terpotong pada ikon bulat/squircle.
+- Hapus aplikasi yang sudah terpasang lalu pasang ulang agar ikon baru tampil.
