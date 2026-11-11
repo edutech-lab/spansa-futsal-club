@@ -114,3 +114,8 @@ Hak akses (Security Rules): admin penuh; anggota hanya membaca data dirinya (ang
 ## Pembaruan v7
 - **Filter kelas** di menu Anggota Futsal (admin dan anggota): pilih semua kelas, satu tingkat (mis. semua kelas 7), atau satu kelas. Jumlah anggota tampil di tiap pilihan. Untuk admin, ekspor dan "pilih semua" mengikuti hasil filter, sehingga bisa memilih satu kelas lalu reset password sekaligus.
 - **Tampilan anggota:** tombol Grid / List; pilihan diingat di perangkat masing-masing.
+
+## Pembaruan v8 — ikon aplikasi (PWA)
+- Ikon saat aplikasi dipasang (Add to Home Screen) kini memakai logo Spansa Futsal Club: lingkaran putih di atas latar biru, kotak bersudut membulat. File: `public/icon-192.png`, `icon-512.png`, `icon-maskable-192.png`, `icon-maskable-512.png`, `apple-touch-icon.png`, `favicon-64.png`.
+- Ikon lama tersimpan di cache perangkat. Agar berganti, **hapus aplikasi yang sudah terpasang lalu pasang ulang** (di Android kadang butuh beberapa menit; di iPhone hapus ikon lalu "Tambah ke Layar Utama" lagi).
+- Untuk hasil paling tajam, ikon bisa dibuat ulang dari file logo asli beresolusi tinggi (PNG transparan, minimal 512 px).
