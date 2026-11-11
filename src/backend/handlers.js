@@ -133,6 +133,9 @@ async function updatePhoto(p, ctx) {
   const ops = [['update', ref('users', ctx.uid), { fotoUrl: r.url }]];
   if (ctx.role === 'anggota' && ctx.nisn) ops.push(['update', ref('anggota', ctx.nisn), { fotoUrl: r.url }]);
   await commit(ops);
+  if (ctx.role === 'anggota') {
+    try { await commit((await many('roster', where('uid', '==', ctx.uid))).map((x) => ['update', ref('roster', x.rid), { fotoUrl: r.url }])); } catch { /* roster disinkronkan admin berikutnya */ }
+  }
   return { fotoUrl: r.url };
 }
 
@@ -168,6 +171,7 @@ async function saveSiswa(p, ctx) {
   if (p.isEdit) { if (!exist) throw new AppError('Data siswa tidak ditemukan', 'NOTFOUND'); } else if (exist) throw new AppError('NISN sudah terdaftar', 'VALID');
   const { anggota, usersByNisn } = await syncContext();
   await commit([['set', ref('siswa', n.o.nisn), n.o], ...syncOps([n.o], anggota, usersByNisn)]);
+  await syncRosterQuiet();
   await writeLog(ctx, 'saveSiswa', n.o.nisn);
   return { ok: true };
 }
@@ -180,6 +184,7 @@ async function deleteSiswa(p, ctx) {
   if ((await many('presensi', where('nisn', '==', nisn), limit(1))).length) throw new AppError('Siswa memiliki riwayat presensi dan iuran sehingga tidak dapat dihapus.', 'VALID');
   await commit([['delete', ref('siswa', nisn)], ['delete', ref('anggota', nisn)]]);
   await adminApi('deleteAccounts', { nisns: [nisn] }).catch(() => {});
+  await syncRosterQuiet();
   await writeLog(ctx, 'deleteSiswa', nisn);
   return { ok: true };
 }
@@ -202,6 +207,7 @@ async function importSiswa(p, ctx) {
   if (changed.length) {
     const { anggota, usersByNisn } = await syncContext();
     await commit([...changed.map((s) => ['set', ref('siswa', s.nisn), s]), ...syncOps(changed, anggota, usersByNisn)]);
+    await syncRosterQuiet();
   }
   await writeLog(ctx, 'importSiswa', tambah + ' baru, ' + ubah + ' ubah');
   return { tambah, ubah, gagal };
@@ -218,7 +224,72 @@ async function scopeMembers(ctx) {
   return a && a.status === 'aktif' ? [memberOut(a)] : [];
 }
 
+/* Daftar anggota untuk dilihat sesama anggota (collection "roster"): tanpa NISN & data kelahiran, ID acak.
+   Diturunkan dari "anggota" + "users"; hanya menulis dokumen yang berbeda. */
+const ROSTER_KEYS = ['nama', 'jk', 'kelas', 'tglBergabung', 'fotoUrl', 'status', 'uid'];
+async function syncRoster() {
+  const [ang, ros, us] = await Promise.all([many('anggota'), many('roster'), many('users', where('role', '==', 'anggota'))]);
+  const uidBy = {}; us.forEach((u) => { uidBy[u.nisn] = u.userId; });
+  const rosBy = mapBy(ros, 'rid');
+  const ops = []; const keep = {};
+  ang.forEach((a) => {
+    let rid = a.rid;
+    if (!rid) { rid = newId('R'); ops.push(['update', ref('anggota', a.nisn), { rid }]); }
+    keep[rid] = true;
+    const want = { rid, nama: a.nama || '', jk: a.jk || '', kelas: a.kelas || '', tglBergabung: a.tglBergabung || '', fotoUrl: a.fotoUrl || '', status: a.status || 'aktif', uid: uidBy[a.nisn] || '' };
+    const cur = rosBy[rid];
+    if (!cur || ROSTER_KEYS.some((k) => String(cur[k] || '') !== String(want[k] || ''))) ops.push(['set', ref('roster', rid), want]);
+  });
+  ros.forEach((r) => { if (!keep[r.rid]) ops.push(['delete', ref('roster', r.rid)]); });
+  if (ops.length) await commit(ops);
+}
+const syncRosterQuiet = () => syncRoster().catch((e) => console.error('syncRoster', e));
+
+async function listRoster() {
+  return (await many('roster', where('status', '==', 'aktif')))
+    .map((r) => ({ rid: r.rid, nama: r.nama, jk: r.jk || '', kelas: r.kelas || '', tglBergabung: r.tglBergabung || '', fotoUrl: r.fotoUrl || '' }))
+    .sort(byNama);
+}
+
+/* Membuat/mengaktifkan akun login per 5 NISN dengan 1x percobaan ulang. Mengembalikan daftar yang gagal. */
+async function ensureAccountsChunked(nisns) {
+  const gagal = [];
+  for (let i = 0; i < nisns.length; i += 5) {
+    const part = nisns.slice(i, i + 5);
+    let res = null; let lastErr = null;
+    for (let t = 0; t < 2 && !res; t++) {
+      try { res = await adminApi('ensureAccounts', { nisns: part }); } catch (e) { lastErr = e; }
+    }
+    if (!res) { part.forEach((n) => gagal.push({ nisn: n, alasan: (lastErr && lastErr.message) || 'Server akun tidak merespons' })); continue; }
+    (res.gagal || []).forEach((g) => gagal.push(g));
+  }
+  return gagal;
+}
+
+/* Perbaikan massal: pastikan SETIAP anggota aktif punya akun login yang benar. Password yang sudah diganti anggota tidak berubah. */
+async function syncAccounts(p, ctx) {
+  const members = await activeMembers();
+  const gagal = await ensureAccountsChunked(members.map((m) => m.nisn));
+  await syncRoster();
+  const nm = mapBy(members, 'nisn');
+  await writeLog(ctx, 'syncAccounts', members.length + ' anggota, ' + gagal.length + ' gagal');
+  return { total: members.length, gagal: gagal.map((g) => ({ nisn: g.nisn, nama: (nm[g.nisn] && nm[g.nisn].nama) || g.nisn, alasan: g.alasan })) };
+}
+
+async function updateAnggotaPhoto(p, ctx) {
+  const nisn = String(p.nisn || '');
+  const a = await one('anggota', nisn);
+  if (!a || a.status !== 'aktif') throw new AppError('Anggota tidak ditemukan', 'NOTFOUND');
+  const up = await driveApi('upload', { kind: 'foto', name: 'foto_' + nisn + '.jpg', mime: p.mime, data: p.data, replaceUrl: a.fotoUrl || '' });
+  const us = await many('users', where('nisn', '==', nisn));
+  await commit([['update', ref('anggota', nisn), { fotoUrl: up.url }], ...us.map((u) => ['update', ref('users', u.userId), { fotoUrl: up.url }])]);
+  await syncRosterQuiet();
+  await writeLog(ctx, 'updateAnggotaPhoto', nisn);
+  return { fotoUrl: up.url };
+}
+
 async function listAnggota() {
+  await syncRoster().catch((e) => console.error('syncRoster', e));
   return (await many('anggota', where('status', '==', 'aktif'))).map((a) => ({ ...memberOut(a), fotoUrl: a.fotoUrl || '' })).sort(byNama);
 }
 
@@ -238,8 +309,14 @@ async function addAnggota(p, ctx) {
     else ops.push(['set', ref('anggota', n), { ...base, tglBergabung: tgl, fotoUrl: '', createdAt: nowIso() }]);
   });
   await commit(ops);
-  await adminApi('ensureAccounts', { nisns });
-  await writeLog(ctx, 'addAnggota', nisns.length + ' siswa');
+  const gagal = await ensureAccountsChunked(nisns);
+  await syncRosterQuiet();
+  const ok = nisns.length - gagal.length;
+  if (ok > 0) await writeLog(ctx, 'addAnggota', ok + ' siswa');
+  if (gagal.length) {
+    const nm = (n) => (siswa[n] && siswa[n].nama) || n;
+    throw new AppError((ok > 0 ? ok + ' berhasil. ' : '') + gagal.length + ' akun belum siap: ' + gagal.slice(0, 2).map((g) => nm(g.nisn) + ' - ' + g.alasan).join(' | ') + '. Data anggota sudah tersimpan; setelah masalah diperbaiki klik "Perbaiki Akun Login".', 'REMOTE');
+  }
   return { jumlah: nisns.length };
 }
 
@@ -249,6 +326,7 @@ async function updateAnggota(p) {
   const a = await one('anggota', String(p.nisn));
   if (!a || a.status !== 'aktif') throw new AppError('Anggota tidak ditemukan', 'NOTFOUND');
   await commit([['update', ref('anggota', a.nisn), { tglBergabung: tgl }]]);
+  await syncRosterQuiet();
   return { ok: true };
 }
 
@@ -258,6 +336,7 @@ async function removeAnggota(p, ctx) {
   if (!a || a.status !== 'aktif') throw new AppError('Anggota tidak ditemukan', 'NOTFOUND');
   await commit([['update', ref('anggota', nisn), { status: 'nonaktif' }]]);
   await adminApi('disableAccounts', { nisns: [nisn] });
+  await syncRosterQuiet();
   await writeLog(ctx, 'removeAnggota', nisn);
   return { ok: true };
 }
@@ -494,11 +573,11 @@ const formasiView = (jadwal, row) => ({
   cadangan: row ? (row.cadangan || []) : [], names: row ? (row.names || {}) : {}
 });
 
-async function getFormasi(p) {
+async function getFormasi(p, ctx) {
   const jadwal = await one('jadwal', String(p.jadwalId));
   if (!jadwal) throw new AppError('Jadwal tidak ditemukan', 'NOTFOUND');
   const v = formasiView(jadwal, await one('formasi', jadwal.id));
-  v.anggota = (await activeMembers()).map((m) => ({ nisn: m.nisn, nama: m.nama, kelas: m.kelas }));
+  if (ctx && ctx.role === 'admin') v.anggota = (await activeMembers()).map((m) => ({ nisn: m.nisn, nama: m.nama, kelas: m.kelas }));
   return v;
 }
 
@@ -733,6 +812,7 @@ export const ROUTES = {
   rekapIuran: { fn: rekapIuran },
   listJadwal: { fn: listJadwal },
   getFormasi: { fn: getFormasi },
+  listRoster: { fn: listRoster },
   listGaleri: { fn: listGaleri },
   saveSettings: { fn: saveSettings, admin: true },
   unlockSaldoAwal: { fn: unlockSaldoAwal, admin: true },
@@ -745,6 +825,8 @@ export const ROUTES = {
   updateAnggota: { fn: updateAnggota, admin: true },
   removeAnggota: { fn: removeAnggota, admin: true },
   resetPassword: { fn: resetPassword, admin: true },
+  syncAccounts: { fn: syncAccounts, admin: true },
+  updateAnggotaPhoto: { fn: updateAnggotaPhoto, admin: true },
   listPertemuan: { fn: listPertemuan, admin: true },
   getPresensi: { fn: getPresensi, admin: true },
   savePresensi: { fn: savePresensi, admin: true },

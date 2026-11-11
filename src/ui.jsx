@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Inbox, Loader2, Search, X } from 'lucide-react';
 import { DEFAULT_LOGO } from './config.js';
-import { initials, monthLabel, termRange } from './utils.js';
+import { initials, monthLabel, photoSrc, termRange } from './utils.js';
 
 const UiCtx = createContext(null);
 export const useUi = () => useContext(UiCtx);
@@ -109,7 +109,8 @@ export function SearchBox({ value, onChange, placeholder = 'Cari...' }) {
 export function Avatar({ src, name, size = 36 }) {
   const [bad, setBad] = useState(false);
   useEffect(() => setBad(false), [src]);
-  if (src && !bad) return <img className="avatar" src={src} alt={name || ''} width={size} height={size} style={{ width: size, height: size }} referrerPolicy="no-referrer" onError={() => setBad(true)} />;
+  const url = photoSrc(src, Math.max(160, Math.round(size * 3)));
+  if (url && !bad) return <img className="avatar" src={url} alt={name || ''} width={size} height={size} style={{ width: size, height: size }} referrerPolicy="no-referrer" onError={() => setBad(true)} />;
   return <span className="avatar" style={{ width: size, height: size, fontSize: size * 0.38 }}>{initials(name)}</span>;
 }
 

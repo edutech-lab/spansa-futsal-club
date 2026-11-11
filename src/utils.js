@@ -283,3 +283,13 @@ export function cellDate(cell) {
   if (m) return fmt(+m[3], +m[2], +m[1]);
   return { value: '', ok: false };
 }
+
+/* Foto Google Drive disimpan sebagai tautan halaman ("/file/d/ID/view") yang tidak bisa dipakai di <img>.
+   Fungsi ini mengubahnya menjadi URL gambar langsung. URL lain dikembalikan apa adanya. */
+export function photoSrc(url, size = 400) {
+  const u = String(url || '').trim();
+  if (!u) return '';
+  const m = /(?:\/d\/|[?&]id=)([-\w]{20,})/.exec(u);
+  if (m && /(drive|docs)\.google\.com|googleusercontent\.com/.test(u)) return 'https://lh3.googleusercontent.com/d/' + m[1] + '=w' + size;
+  return u;
+}

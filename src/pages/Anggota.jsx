@@ -1,11 +1,48 @@
-import { useMemo, useState } from 'react';
-import { Check, Download, KeyRound, Pencil, Plus, Search, Trash2, UserPlus } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
+import { Camera, Check, Download, KeyRound, Loader2, Pencil, Plus, Search, ShieldCheck, Trash2, UserPlus } from 'lucide-react';
 import { api } from '../api.js';
-import { Avatar, Card, DataTable, ErrorBox, Field, Loading, Modal, PageHead, SearchBox, useLoad, useUi } from '../ui.jsx';
-import { exportXlsx, tglID } from '../utils.js';
+import { useAuth } from '../auth.jsx';
+import { Avatar, Card, DataTable, Empty, ErrorBox, Field, Loading, Modal, PageHead, SearchBox, useLoad, useUi } from '../ui.jsx';
+import { exportXlsx, fileToResizedBase64, tglID } from '../utils.js';
 
 export default function Anggota() {
+  const { isAdmin } = useAuth();
+  return isAdmin ? <AnggotaAdmin /> : <AnggotaView />;
+}
+
+/* Tampilan anggota: hanya lihat. Data dari daftar "roster" (tanpa NISN dan data kelahiran). */
+function AnggotaView() {
+  const { data, loading, error, reload } = useLoad(() => api('listRoster'), []);
+  const [q, setQ] = useState('');
+  const rows = useMemo(() => (data || []).filter((a) => !q || (a.nama + ' ' + a.kelas).toLowerCase().includes(q.toLowerCase())), [data, q]);
+  return (
+    <>
+      <PageHead title="Anggota Futsal" subtitle="Daftar anggota klub (hanya lihat)" />
+      <Card plain>
+        <div className="toolbar"><SearchBox value={q} onChange={setQ} placeholder="Cari nama atau kelas" /><span className="hint">{rows.length} anggota</span></div>
+        {loading ? <Loading /> : error ? <ErrorBox message={error} onRetry={reload} /> : rows.length === 0 ? <Empty text={q ? 'Anggota tidak ditemukan' : 'Belum ada data anggota. Admin perlu membuka menu Anggota Futsal sekali untuk menyiapkan daftar.'} /> : (
+          <div className="roster">
+            {rows.map((a) => (
+              <div key={a.rid} className="rcard">
+                <Avatar src={a.fotoUrl} name={a.nama} size={64} />
+                <b>{a.nama}</b>
+                <span className="chip">Kelas {a.kelas || '-'}</span>
+                <small>{a.jk === 'L' ? 'Laki-laki' : a.jk === 'P' ? 'Perempuan' : '-'}{a.tglBergabung ? ' · Bergabung ' + tglID(a.tglBergabung, true) : ''}</small>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </>
+  );
+}
+
+function AnggotaAdmin() {
   const { toast, confirm } = useUi();
+  const fileRef = useRef(null);
+  const photoFor = useRef(null);
+  const [fixing, setFixing] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState('');
   const { data, loading, error, reload } = useLoad(() => api('listAnggota'), []);
   const [q, setQ] = useState('');
   const [add, setAdd] = useState(false);
@@ -21,11 +58,37 @@ export default function Anggota() {
     if (!(await confirm(`Reset password ${a.nama} menjadi NISN?`))) return;
     try { await api('resetPassword', { nisn: a.nisn }); toast('Password dikembalikan ke NISN'); } catch (e) { toast(e.message, 'err'); }
   };
+  const pickPhoto = (a) => { photoFor.current = a; fileRef.current.click(); };
+  const onPhoto = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    const a = photoFor.current;
+    if (!file || !a) return;
+    setPhotoBusy(a.nisn);
+    try {
+      const img = await fileToResizedBase64(file);
+      await api('updateAnggotaPhoto', { nisn: a.nisn, ...img });
+      toast('Foto ' + a.nama + ' diperbarui');
+      reload();
+    } catch (err) { toast(err.message, 'err'); } finally { setPhotoBusy(''); }
+  };
+  const fixAccounts = async () => {
+    if (!(await confirm('Periksa dan perbaiki akun login SEMUA anggota aktif? Akun yang belum ada akan dibuat (password awal = NISN). Password yang sudah diganti anggota tidak berubah.'))) return;
+    setFixing(true);
+    try {
+      toast('Memeriksa akun anggota...', 'load');
+      const r = await api('syncAccounts');
+      if (r.gagal.length) toast(`${r.total - r.gagal.length} dari ${r.total} akun siap. Gagal: ` + r.gagal.slice(0, 2).map((g) => g.nama + ' - ' + g.alasan).join(' | '), 'err');
+      else toast(`Semua ${r.total} akun anggota siap dipakai`);
+      reload();
+    } catch (e) { toast(e.message, 'err'); } finally { setFixing(false); }
+  };
   const exp = () => exportXlsx('anggota_futsal.xlsx', 'Anggota Futsal', ['NISN', 'Nama', 'Jenis Kelamin', 'Kelas', 'Tanggal Bergabung'], rows.map((a) => [a.nisn, a.nama, a.jk, a.kelas, a.tglBergabung]), [0, 3, 4]);
 
   return (
     <>
       <PageHead title="Anggota Futsal" subtitle="Dipilih dari Data Siswa">
+        <button className="btn sec" onClick={fixAccounts} disabled={fixing} title="Buat/aktifkan ulang akun login anggota yang bermasalah">{fixing ? <Loader2 size={16} className="spin" /> : <ShieldCheck size={16} />}Perbaiki Akun Login</button>
         <button className="btn sec" onClick={exp} disabled={!rows.length}><Download size={16} />Ekspor</button>
         <button className="btn" onClick={() => setAdd(true)}><UserPlus size={16} />Tambah Anggota</button>
       </PageHead>
@@ -38,12 +101,14 @@ export default function Anggota() {
             { label: 'NISN', key: 'nisn', nowrap: true }, { label: 'JK', key: 'jk', align: 'center' }, { label: 'Kelas', key: 'kelas' },
             { label: 'Bergabung', render: (r) => tglID(r.tglBergabung, true), nowrap: true },
             { label: 'Aksi', align: 'right', render: (r) => (<div className="row" style={{ justifyContent: 'flex-end', gap: 6 }}>
+              <button className="btn sec sm icon" aria-label="Ganti foto" title="Unggah foto anggota" disabled={photoBusy === r.nisn} onClick={() => pickPhoto(r)}>{photoBusy === r.nisn ? <Loader2 size={14} className="spin" /> : <Camera size={14} />}</button>
               <button className="btn sec sm icon" aria-label="Ubah tanggal bergabung" onClick={() => setEdit({ nisn: r.nisn, nama: r.nama, tglBergabung: r.tglBergabung })}><Pencil size={14} /></button>
               <button className="btn sec sm icon" aria-label="Reset password" onClick={() => reset(r)}><KeyRound size={14} /></button>
               <button className="btn sec sm icon" aria-label="Keluarkan" onClick={() => remove(r)}><Trash2 size={14} color="#EF4444" /></button></div>) }
           ]} />
         )}
       </Card>
+      <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPhoto} />
       <AddModal open={add} onClose={() => setAdd(false)} onDone={reload} />
       <Modal open={!!edit} onClose={() => setEdit(null)} title="Ubah Tanggal Bergabung" footer={<><button className="btn sec" onClick={() => setEdit(null)}>Batal</button><button className="btn" onClick={async () => {
         try { await api('updateAnggota', { nisn: edit.nisn, tglBergabung: edit.tglBergabung }); toast('Tersimpan'); setEdit(null); reload(); } catch (e) { toast(e.message, 'err'); }

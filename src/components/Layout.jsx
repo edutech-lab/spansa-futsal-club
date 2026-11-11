@@ -11,12 +11,12 @@ import { fileToResizedBase64, hariTgl, termOptions } from '../utils.js';
 export const MENU = [
   { path: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'anggota'], grp: 'Utama' },
   { path: 'siswa', label: 'Data Siswa', icon: GraduationCap, roles: ['admin'], grp: 'Keanggotaan' },
-  { path: 'anggota', label: 'Anggota Futsal', icon: Shirt, roles: ['admin'], grp: 'Keanggotaan' },
+  { path: 'anggota', label: 'Anggota Futsal', icon: Shirt, roles: ['admin', 'anggota'], grp: 'Keanggotaan' },
   { path: 'kartu', label: 'Kartu Anggota', icon: CreditCard, roles: ['admin', 'anggota'], grp: 'Keanggotaan' },
   { path: 'galeri', label: 'Galeri', icon: Images, roles: ['admin', 'anggota'], grp: 'Keanggotaan' },
   { path: 'hadir', label: 'Daftar Hadir', icon: ClipboardCheck, roles: ['admin'], grp: 'Latihan & Pertandingan' },
-  { path: 'jadwal', label: 'Jadwal Pertandingan', icon: Ball, roles: ['admin'], grp: 'Latihan & Pertandingan' },
-  { path: 'formasi', label: 'Formasi', icon: Pitch, roles: ['admin'], grp: 'Latihan & Pertandingan' },
+  { path: 'jadwal', label: 'Jadwal Pertandingan', icon: Ball, roles: ['admin', 'anggota'], grp: 'Latihan & Pertandingan' },
+  { path: 'formasi', label: 'Formasi', icon: Pitch, roles: ['admin', 'anggota'], grp: 'Latihan & Pertandingan' },
   { path: 'nilai', label: 'Nilai', icon: Medal, roles: ['admin'], grp: 'Latihan & Pertandingan' },
   { path: 'rekap-hadir', label: 'Rekap Kehadiran', icon: CalendarCheck, roles: ['admin', 'anggota'], grp: 'Latihan & Pertandingan' },
   { path: 'rekap-iuran', label: 'Rekap Iuran', icon: Coins, roles: ['admin'], grp: 'Keuangan' },
@@ -151,6 +151,7 @@ export default function Layout({ route, children }) {
         <main className="content">
           {children}
         </main>
+        <div className="wm" style={{ backgroundImage: `url(${settings.logoUrl || DEFAULT_LOGO})` }} aria-hidden="true" />
       </div>
       <nav className="bottom-nav">
         {bottom.map(([p, l, I]) => <a key={p} href={'#/' + p} className={route === p ? 'on' : ''}><I size={21} />{l}</a>)}

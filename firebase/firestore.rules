@@ -27,6 +27,14 @@ service cloud.firestore {
       allow update: if myNisn() != '' && nisn == myNisn() && onlyFoto();
     }
 
+    // Daftar anggota yang boleh dilihat sesama anggota: TANPA NISN (NISN = password awal) dan tanpa data kelahiran.
+    // ID dokumen acak (rid). Diisi/diperbarui oleh admin; anggota hanya boleh mengganti fotoUrl miliknya.
+    match /roster/{rid} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+      allow update: if isMember() && resource.data.uid == request.auth.uid && onlyFoto();
+    }
+
     match /pertemuan/{id} { allow read: if signedIn(); allow write: if isAdmin(); }
     match /pertemuanStat/{id} { allow read, write: if isAdmin(); }
     match /presensi/{id} {

@@ -6,7 +6,7 @@ import { useAuth } from '../auth.jsx';
 import { DEFAULT_LOGO } from '../config.js';
 import { Card, ErrorBox, Loading, PageHead, useLoad, useUi } from '../ui.jsx';
 import { toData } from '../components/imageData.js';
-import { initials, splitSchool, tglID } from '../utils.js';
+import { initials, photoSrc, splitSchool, tglID } from '../utils.js';
 
 const SCHOOL_LOGO = 'https://lh3.googleusercontent.com/d/1GDe6aqXyF_RR6kL3jMCy0vWqaO83jgyp';
 
@@ -15,6 +15,7 @@ function Kartu({ d, logo, logoSekolah, foto, innerRef }) {
   return (
     <div className="kartu" ref={innerRef}>
       <div className="k-deco"><i className="a" /><i className="b" /></div>
+      <img className="k-wm" src={logo} alt="" aria-hidden="true" />
       <div className="k-head">
         <div className="k-club"><img src={logo} alt="" /><div><b>KARTU ANGGOTA</b><span>{d.namaKlub}</span></div></div>
         <div className="k-school">
@@ -53,6 +54,7 @@ function CardView({ data }) {
   const schoolUrl = settings.logoSekolahUrl || SCHOOL_LOGO;
   const [inl, setInl] = useState({ logo: '', school: '', foto: '', ready: false });
   const [scale, setScale] = useState(1);
+  const fotoUrl = photoSrc(data.fotoUrl, 480);
   const wrap = useRef(null);
   const shot = useRef(null);
   const [busy, setBusy] = useState(false);
@@ -60,9 +62,9 @@ function CardView({ data }) {
   useEffect(() => {
     let ok = true;
     setInl((p) => ({ ...p, ready: false }));
-    Promise.all([toData(logoUrl), toData(schoolUrl), toData(data.fotoUrl)]).then(([logo, school, foto]) => { if (ok) setInl({ logo, school, foto, ready: true }); });
+    Promise.all([toData(logoUrl), toData(schoolUrl), toData(fotoUrl)]).then(([logo, school, foto]) => { if (ok) setInl({ logo, school, foto, ready: true }); });
     return () => { ok = false; };
-  }, [logoUrl, schoolUrl, data.fotoUrl]);
+  }, [logoUrl, schoolUrl, fotoUrl]);
   useEffect(() => {
     const fit = () => { if (wrap.current) setScale(Math.min(1, wrap.current.clientWidth / 540)); };
     fit();
@@ -96,11 +98,11 @@ function CardView({ data }) {
     <>
       <div ref={wrap} className="kartu-wrap" style={{ height: 340 * scale }}>
         <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: 540 }}>
-          <Kartu d={full} logo={logoUrl} logoSekolah={schoolUrl} foto={data.fotoUrl} />
+          <Kartu d={full} logo={logoUrl} logoSekolah={schoolUrl} foto={fotoUrl} />
         </div>
       </div>
       <div style={{ position: 'fixed', left: -10000, top: 0 }} aria-hidden="true">
-        <Kartu d={full} logo={inl.logo || logoUrl} logoSekolah={inl.school || schoolUrl} foto={inl.foto || data.fotoUrl} innerRef={shot} />
+        <Kartu d={full} logo={inl.logo || logoUrl} logoSekolah={inl.school || schoolUrl} foto={inl.foto || fotoUrl} innerRef={shot} />
       </div>
       <div className="row wrap" style={{ marginTop: 14 }}>
         <button className="btn" onClick={download} disabled={busy || !inl.ready}>{busy || !inl.ready ? <Loader2 size={16} className="spin" /> : <Download size={16} />}{inl.ready ? 'Unduh Kartu (PNG)' : 'Menyiapkan gambar...'}</button>

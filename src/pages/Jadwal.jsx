@@ -8,7 +8,7 @@ import { tglID, termRange, ymd } from '../utils.js';
 const EMPTY = { id: '', tanggal: '', jam: '15:00', lawan: '', lokasi: '', jenis: 'Persahabatan', catatan: '' };
 
 export default function Jadwal() {
-  const { term } = useAuth();
+  const { term, isAdmin } = useAuth();
   const { toast, confirm } = useUi();
   const { data, loading, error, reload } = useLoad(() => api('listJadwal', { term }), [term]);
   const [form, setForm] = useState(null);
@@ -29,8 +29,8 @@ export default function Jadwal() {
 
   return (
     <>
-      <PageHead title="Jadwal Pertandingan" subtitle="Jadwal tampil sebagai pengingat di dashboard anggota">
-        <button className="btn" onClick={() => setForm({ ...EMPTY, tanggal: today >= range.from && today <= range.to ? today : range.from })}><Plus size={16} />Tambah Jadwal</button>
+      <PageHead title="Jadwal Pertandingan" subtitle={isAdmin ? 'Jadwal tampil sebagai pengingat di dashboard anggota' : 'Jadwal pertandingan klub (hanya lihat)'}>
+        {isAdmin && <button className="btn" onClick={() => setForm({ ...EMPTY, tanggal: today >= range.from && today <= range.to ? today : range.from })}><Plus size={16} />Tambah Jadwal</button>}
       </PageHead>
       <Card plain>
         {loading ? <Loading /> : error ? <ErrorBox message={error} onRetry={reload} /> : (
@@ -41,9 +41,9 @@ export default function Jadwal() {
             { label: 'Lokasi', render: (r) => <span className="row" style={{ gap: 4 }}><MapPin size={14} />{r.lokasi || '-'}</span> },
             { label: 'Jenis', render: (r) => <span className="chip">{r.jenis}</span> },
             { label: 'Status', render: (r) => (r.tanggal >= today ? <span className="chip ok">Mendatang</span> : <span className="chip">Selesai</span>) },
-            { label: 'Aksi', align: 'right', render: (r) => (<div className="row" style={{ justifyContent: 'flex-end', gap: 6 }}>
+            ...(isAdmin ? [{ label: 'Aksi', align: 'right', render: (r) => (<div className="row" style={{ justifyContent: 'flex-end', gap: 6 }}>
               <button className="btn sec sm icon" aria-label="Ubah" onClick={() => setForm({ ...r })}><Pencil size={14} /></button>
-              <button className="btn sec sm icon" aria-label="Hapus" onClick={() => del(r)}><Trash2 size={14} color="#EF4444" /></button></div>) }
+              <button className="btn sec sm icon" aria-label="Hapus" onClick={() => del(r)}><Trash2 size={14} color="#EF4444" /></button></div>) }] : [])
           ]} />
         )}
       </Card>

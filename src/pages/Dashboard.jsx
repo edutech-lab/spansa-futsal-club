@@ -154,7 +154,7 @@ export default function Dashboard() {
               </Card>
             )}
 
-            <Card title="Pertandingan" icon={Trophy} action={isAdmin ? 'Lihat semua' : null} onAction={() => { window.location.hash = '#/jadwal'; }}>
+            <Card title="Pertandingan" icon={Trophy} action="Lihat semua" onAction={() => { window.location.hash = '#/jadwal'; }}>
               {d.jadwal.length === 0 ? <Empty text="Belum ada pertandingan mendatang" /> : d.jadwal.map((j, i) => { const t = hariTgl(j.tanggal); return (
                 <div key={j.id} className="li">
                   <span className="ico"><CalendarDays size={16} /></span>

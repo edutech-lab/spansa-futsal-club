@@ -88,3 +88,19 @@ Hak akses (Security Rules): admin penuh; anggota hanya membaca data dirinya (ang
 - **Gagal menambah anggota / reset password**: cek Vercel > Functions > Logs untuk `/api/admin` dan pastikan tiga variabel `FIREBASE_*` terisi.
 - **Unggah foto/bukti gagal**: periksa `VITE_DRIVE_URL` (harus `/exec` deployment terbaru), akses "Anyone", Script Property `FIREBASE_API_KEY`, dan `setupFolders()` sudah dijalankan.
 - **Kuota**: paket gratis Firebase (Spark) cukup untuk satu klub sekolah. Vercel Function tidak memerlukan paket Blaze.
+
+---
+
+## Pembaruan v5 — langkah wajib setelah memperbarui kode
+
+1. **Publikasikan Firestore Rules** (ada koleksi baru `roster`): `firebase deploy --only firestore:rules`
+2. **Push ke GitHub** agar Vercel deploy ulang (`vercel.json` kini menaikkan batas waktu `/api/admin` menjadi 60 detik).
+3. Login sebagai **admin → menu Anggota Futsal**:
+   - Halaman ini otomatis menyiapkan daftar anggota yang dilihat sesama anggota (koleksi `roster`, tanpa NISN dan tanpa data kelahiran).
+   - Klik **Perbaiki Akun Login** sekali. Tombol ini membuat/mengaktifkan akun semua anggota aktif yang akunnya belum siap. Password yang sudah diganti anggota tidak berubah. Jalankan ulang kapan pun ada anggota yang tidak bisa login.
+4. Foto anggota: admin dapat mengunggah foto tiap anggota lewat ikon kamera di tabel Anggota Futsal. Anggota tetap bisa mengganti foto sendiri lewat menu profil.
+
+### Penyebab masalah yang diperbaiki
+- **Foto tidak tampil:** layanan Drive menyimpan tautan halaman (`/file/d/ID/view`) yang tidak bisa dipakai sebagai gambar. Aplikasi kini mengubahnya menjadi URL gambar langsung saat ditampilkan (foto lama ikut tampil, tanpa unggah ulang).
+- **Anggota tidak bisa login / tambah anggota kadang gagal:** akun dibuat satu per satu dalam satu permintaan sehingga sering kena batas waktu Vercel saat banyak anggota dipilih, menyisakan anggota tanpa akun. Kini diproses per 5 NISN paralel dengan satu kali percobaan ulang, pesan error menyebut siswa dan alasannya, dan ada tombol Perbaiki Akun Login. Reset password juga membuat akun yang hilang.
+- NISN yang bukan 6–20 digit angka tidak bisa dibuatkan akun; perbaiki NISN-nya di Data Siswa.
