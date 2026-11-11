@@ -128,3 +128,8 @@ Hak akses (Security Rules): admin penuh; anggota hanya membaca data dirinya (ang
 ## Pembaruan v10 — logo ikon diperbesar
 - Logo pada semua ikon aplikasi diperbesar menjadi 110% dari ukuran sebelumnya (list putih tetap). Versi maskable Android diuji tetap berada di dalam zona aman sehingga tidak terpotong pada ikon bulat/squircle.
 - Hapus aplikasi yang sudah terpasang lalu pasang ulang agar ikon baru tampil.
+
+## Pembaruan v11 — ikon dari logo asli (tidak pecah)
+- Semua ikon kini dibuat dari file logo asli beresolusi tinggi (`public/logo-spansa.png`, 1268×1240 px, latar transparan), bukan lagi dari gambar kecil yang diperbesar. Tulisan "FUTSAL CLUB", "EST. 2027", dan detail singa tampil tajam, termasuk di layar pembuka (splash).
+- Ukuran ikon: 192, 384, 512, 1024 px (bentuk kotak membulat) + maskable 192/512 untuk Android + apple-touch-icon + favicon.
+- Hapus aplikasi yang sudah terpasang lalu pasang ulang agar ikon dan layar pembuka baru tampil. Di Android, layar pembuka diambil dari ikon saat aplikasi dipasang sehingga ikon lama tidak berganti sebelum dipasang ulang.
