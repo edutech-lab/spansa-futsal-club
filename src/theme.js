@@ -8,7 +8,7 @@ export function getTheme() {
 export function applyTheme(t) {
   document.documentElement.setAttribute('data-theme', t);
   const m = document.querySelector('meta[name="theme-color"]');
-  if (m) m.setAttribute('content', t === 'dark' ? '#0A1020' : '#266FF2');
+  if (m) m.setAttribute('content', t === 'dark' ? '#010309' : '#266FF2');
 }
 
 export function saveTheme(t) {

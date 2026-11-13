@@ -133,3 +133,9 @@ Hak akses (Security Rules): admin penuh; anggota hanya membaca data dirinya (ang
 - Semua ikon kini dibuat dari file logo asli beresolusi tinggi (`public/logo-spansa.png`, 1268×1240 px, latar transparan), bukan lagi dari gambar kecil yang diperbesar. Tulisan "FUTSAL CLUB", "EST. 2027", dan detail singa tampil tajam, termasuk di layar pembuka (splash).
 - Ukuran ikon: 192, 384, 512, 1024 px (bentuk kotak membulat) + maskable 192/512 untuk Android + apple-touch-icon + favicon.
 - Hapus aplikasi yang sudah terpasang lalu pasang ulang agar ikon dan layar pembuka baru tampil. Di Android, layar pembuka diambil dari ikon saat aplikasi dipasang sehingga ikon lama tidak berganti sebelum dipasang ulang.
+
+## Pembaruan v12 — mode gelap baru
+- Warna biru pada mode gelap diganti cyan (aksen #0CB3D1, tombol utama gradien #038BC9 → #06AED3) mengikuti referensi Quiz Clash of Champion. Berlaku untuk tombol, menu aktif, chip, kartu statistik, avatar, grafik, layar login, dan galeri.
+- Warna dasar dibuat lebih hitam pekat (bingkai #010309, panel #04070D, kartu #080C14).
+- Semua batas (kartu, header, tabel, input, modal, panel utama) memakai garis abu-abu gelap tipis 1px (#1F242D; kolom input #282D38).
+- Mode terang tidak berubah. Tema dipilih lewat tombol bulan di header.

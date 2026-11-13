@@ -22,7 +22,7 @@ export function UiProvider({ children }) {
       <div className="toasts" aria-live="polite">
         {toasts.map((t) => (
           <div key={t.id} className={'toast ' + (t.type === 'err' ? 'err' : t.type === 'load' ? 'load' : '')}>
-            {t.type === 'err' ? <AlertCircle size={18} color="#EF4444" /> : t.type === 'load' ? <Loader2 size={18} className="spin" color="#266FF2" /> : <CheckCircle2 size={18} color="#10B981" />}
+            {t.type === 'err' ? <AlertCircle size={18} color="#EF4444" /> : t.type === 'load' ? <Loader2 size={18} className="spin" style={{ color: 'var(--blue)' }} /> : <CheckCircle2 size={18} color="#10B981" />}
             <span>{t.message}</span>
           </div>
         ))}

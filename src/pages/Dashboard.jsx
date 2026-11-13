@@ -74,16 +74,16 @@ export default function Dashboard() {
         <div className="grid g-stats">{[0, 1, 2, 3].map((i) => <Skeleton key={i} h={96} />)}</div>
       ) : isAdmin ? (
         <div className="grid g-stats" style={{ marginBottom: 14 }}>
-          <Stat icon={CalendarDays} color="#266FF2" label="Jadwal Mendatang" value={s.jadwalMendatang} sub="Pertandingan" />
-          <Stat icon={Users} color="#266FF2" label="Total Anggota" value={s.anggota} sub="Anggota aktif" />
-          <Stat icon={Coins} color="#266FF2" label="Pemasukan Iuran" value={rupiah(s.pemasukan)} sub={term} />
-          <Stat icon={PiggyBank} color="#266FF2" label="Saldo Kas" value={rupiah(s.saldo)} sub="Hingga akhir periode" />
+          <Stat icon={CalendarDays} color="var(--blue)" label="Jadwal Mendatang" value={s.jadwalMendatang} sub="Pertandingan" />
+          <Stat icon={Users} color="var(--blue)" label="Total Anggota" value={s.anggota} sub="Anggota aktif" />
+          <Stat icon={Coins} color="var(--blue)" label="Pemasukan Iuran" value={rupiah(s.pemasukan)} sub={term} />
+          <Stat icon={PiggyBank} color="var(--blue)" label="Saldo Kas" value={rupiah(s.saldo)} sub="Hingga akhir periode" />
         </div>
       ) : (
         <div className="grid g-stats three" style={{ marginBottom: 14 }}>
-          <Stat icon={TrendingUp} color="#266FF2" label="Kehadiran Saya" value={s.persenHadir + '%'} sub={`${s.hadir} dari ${s.totalPertemuan} latihan`} />
-          <Stat icon={CalendarDays} color="#266FF2" label="Jadwal Mendatang" value={s.jadwalMendatang} sub="Pertandingan" />
-          <Stat icon={Award} color="#266FF2" label="Nilai Semester" value={s.nilai ? s.nilai.predikat : '-'} sub={s.nilai ? `Total ${s.nilai.total}` : 'Belum diinput'} />
+          <Stat icon={TrendingUp} color="var(--blue)" label="Kehadiran Saya" value={s.persenHadir + '%'} sub={`${s.hadir} dari ${s.totalPertemuan} latihan`} />
+          <Stat icon={CalendarDays} color="var(--blue)" label="Jadwal Mendatang" value={s.jadwalMendatang} sub="Pertandingan" />
+          <Stat icon={Award} color="var(--blue)" label="Nilai Semester" value={s.nilai ? s.nilai.predikat : '-'} sub={s.nilai ? `Total ${s.nilai.total}` : 'Belum diinput'} />
         </div>
       )}
 
